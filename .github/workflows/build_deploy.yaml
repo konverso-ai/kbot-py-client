@@ -1,0 +1,52 @@
+name: Build and push to PyPi
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  test:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    name: Test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry 1.8.3
+        run: pipx install poetry==1.8.3
+
+      - name: Install Dependencies
+        run: poetry install --no-ansi
+
+      - name: Lint code with Ruff
+        run: poetry run ruff check
+
+  build-push:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    name: Build and push to Nexus
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry 1.8.3
+        run: pipx install poetry==1.8.3
+
+      - name: Install deps
+        run: poetry install --no-ansi
+
+      - name: Configure Poetry for PyPi
+        run : poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Build and push to PyPi
+        run: poetry publish --build --no-interaction
