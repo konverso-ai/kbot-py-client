@@ -1,7 +1,5 @@
-import time
-
 from kbot_client import Client
-from kbot_client.chat_client import AsyncChatClient, SyncChatClient
+from kbot_client.chat_client import SyncChatClient
 
 user_email = 'amedee.potier@konverso.ai'
 user_firstname = "Amédée"

@@ -1,13 +1,23 @@
 [tool.poetry]
-name = "kbot_py_client"
-version = "2.0.6"
+name = "kbot_client"
+version = "2.0.7"
 description = "Client for Konverso Kbot."
 authors = ["Konverso <contact@konverso.ai>"]
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 readme = "README.md"
+license = "MIT"
+
+[tool.poetry.urls]
+homepage = "https://www.konverso.ai/"
+repository = "https://github.com/konverso-ai/kbot-py-client"
 
 [tool.poetry.dependencies]
-python = "^3.10"
-setuptools = ">=65.5.1"
+python = "^3.12"
+requests = ">=2.27.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.4.4"
@@ -69,7 +79,7 @@ python_files = "test_*.py"
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
 select = ["E4", "E7", "E9", "F"]
-ignore = []
+ignore = ["F401", "E722"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
