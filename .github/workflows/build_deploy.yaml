@@ -31,7 +31,7 @@ jobs:
   build-push:
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
-    name: Build and push to Nexus
+    name: Build and push to PyPi
     steps:
       - uses: actions/checkout@v4
 
