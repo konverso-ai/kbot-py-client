@@ -245,5 +245,3 @@ cli.impersonate(user_email, 'local', external_auth)
 AsyncChatClient(cli, assistant=assistant, convert_html_to_text=True)
 
 ```
-
-
