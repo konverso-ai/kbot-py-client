@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "kbot_client"
-version = "2.0.7"
+name = "kbot-py-client"
+version = "2.0.8"
 description = "Client for Konverso Kbot."
 authors = ["Konverso <contact@konverso.ai>"]
 classifiers=[
@@ -10,10 +10,13 @@ classifiers=[
 ]
 readme = "README.md"
 license = "MIT"
+packages = [
+    { include = "kbot_client" },
+]
 
 [tool.poetry.urls]
-homepage = "https://www.konverso.ai/"
-repository = "https://github.com/konverso-ai/kbot-py-client"
+Homepage = "https://www.konverso.ai/"
+Source = "https://github.com/konverso-ai/kbot-py-client"
 
 [tool.poetry.dependencies]
 python = "^3.12"
