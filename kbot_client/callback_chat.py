@@ -60,7 +60,7 @@ class AsyncCallbackChatClient:
         data={
             "username": "bot",
             "type": type,
-            "assistant": assistant
+            "assistant_id": assistant
         }
         if display_intro:
             greeting_response = self._client.post(f"conversation/{self._type}/greeting", data=data)
