@@ -1,2 +1,2 @@
-from .client import Client, DownKbotClient, UpKbotClient
-from .client_group import ClientGroup
+from kbot_client.client import Client, DownKbotClient, UpKbotClient
+from kbot_client.client_group import ClientGroup
