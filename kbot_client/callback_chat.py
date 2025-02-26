@@ -29,7 +29,6 @@ please check also the kbot utility module: wf/remote_dialog.py that will map a D
 with this AsyncCallbackChatClient
 """
 import uuid
-#import json
 import time
 
 class AsyncCallbackChatClient:
@@ -78,8 +77,6 @@ class AsyncCallbackChatClient:
         if display_intro:
             self._callback(greeting_response.json())
 
-        #print(json.dumps(response.json(), indent=4))
-
     def _process_new_messages(self, messages_json, context):
         """Given a JSON response from the bot, extract two key information:
            - sender: The name of the bot
@@ -114,11 +111,13 @@ class AsyncCallbackChatClient:
         return stop
 
     def send(self, question):
-        # Send the user question to Kbot.
-        #
+        """Send the user question to Kbot.
+
+           Args:
+               question (str): some user message
+        """
         data = {
             'message_id': str(uuid.uuid4()),
-            #'conversation_id': self._conversation_uuid,
             'type': 'message',
             'message': question,
             'status': 'sending',
@@ -129,7 +128,7 @@ class AsyncCallbackChatClient:
         response.raise_for_status()
 
     def get_response(self):
-        """Collect the kbot response"""
+        """Collect the kbot response and call the callback for each received response"""
         # Wait for the response(s)
         #
         while True:
