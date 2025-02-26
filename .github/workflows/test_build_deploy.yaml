@@ -1,4 +1,4 @@
-name: Build and push to PyPi
+name: Test build and push to PyPi
 
 on:
   push:
@@ -15,6 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Run GitLeaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE}}
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -27,6 +33,9 @@ jobs:
 
       - name: Lint code with Ruff
         run: poetry run ruff check
+
+      - name: Run Pylint
+        run: poetry run pylint .
 
   build-push:
     if: ${{ github.ref == 'refs/heads/main' }}
@@ -43,7 +52,7 @@ jobs:
         run: pipx install poetry==1.8.3
 
       - name: Install deps
-        run: poetry install --no-ansi
+        run: poetry install --no-ansi --without dev
 
       - name: Configure Poetry for PyPi
         run : poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
