@@ -4,32 +4,32 @@ import os
 from kbot_client.client import Client
 
 
-class FolderSync:
-    def __init__(self, client: Client):
+class FolderSync:  # noqa: D101
+    def __init__(self, client: Client) -> None:  # noqa: D107
         self._client = client
 
     @property
-    def client(self):
+    def client(self) -> Client:  # noqa: D102
         return self._client
 
-    def sync(self, top_unix_folder, remote_folder_uuid):
-        """Will sync the unix path "path" inside the target folder
-        """
+    def sync(self, top_unix_folder: str, remote_folder_uuid: str) -> None:  # noqa: C901, PLR0912
+        """Will sync the unix path "path" inside the target folder."""
         folders_to_files = {}
         for root, dirs, files in os.walk(top_unix_folder):
 
             for d in dirs:
-                full_path = os.path.join(root, d)
+                full_path = os.path.join(root, d)  # noqa: PTH118
                 rel_path = full_path[len(top_unix_folder):]
 
-                if os.path.isdir(full_path):
+                if os.path.isdir(full_path):  # noqa: PTH112
                     try:
                         folder_files = folders_to_files[rel_path]
                     except KeyError:
                         folder_files = folders_to_files[rel_path] = []
 
                 else:
-                    raise RuntimeError("Not a folder: %s" % full_path)
+                    msg = f"Not a folder: {full_path}"
+                    raise RuntimeError(msg)
 
             rel_path = root[len(top_unix_folder):]
             try:
@@ -63,12 +63,16 @@ class FolderSync:
                 if matching_folders:
                     current_top_folder = folder_cache[current_relative_path] = matching_folders[0].get("uuid")
                 else:
-                    response = self.client.request("post", uri="folder", data={
-                        "name": part,
-                        "parent": current_top_folder
-                        })
+                    response = self.client.request(
+                        "post",
+                        uri="folder",
+                        data={
+                            "name": part,
+                            "parent": current_top_folder,
+                        },
+                    )
 
-                    #return "%s %s" % (part, current_top_folder)
+                    # return "%s %s" % (part, current_top_folder)  # noqa: ERA001
                     current_top_folder = folder_cache[current_relative_path] = response.json().get("uuid")
 
             # We are now ready to work on the Files
@@ -80,24 +84,27 @@ class FolderSync:
                     # File is already in the target File Manager
                     continue
                 # Make a copy of the file with a proper name
-                filepath = os.path.join(top_unix_folder, current_relative_path, f)
-                if not os.path.exists(filepath):
-                    raise RuntimeError("File %s does not exists" % filepath)
+                filepath = os.path.join(top_unix_folder, current_relative_path, f)  # noqa: PTH118
+                if not os.path.exists(filepath):  # noqa: PTH110
+                    msg = f"File {filepath} does not exists"
+                    raise RuntimeError(msg)
 
                 # Upload to remote filemanager
-                with open(filepath, "rb") as fd:
-                    files = {
-                        "upload_files": fd
+                with open(filepath, "rb") as fd:  # noqa: PTH123
+                    _files = {
+                        "upload_files": fd,
                     }
                     params= {
-                        "override": False
+                        "override": False,
                     }
                     data = {
                         "folder": current_top_folder,
                         "name": f,
                     }
-                    response = self.client.post_file("attachment",
-                                                     data=data,
-                                                     params=params,
-                                                     files=files)
-                    #print("Response from API: ", response.text)
+                    response = self.client.post_file(
+                        "attachment",
+                        data=data,
+                        params=params,
+                        files=_files,
+                    )
+                    # print("Response from API: ", response.text)  # noqa: ERA001

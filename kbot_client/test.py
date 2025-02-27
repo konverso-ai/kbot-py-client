@@ -11,16 +11,16 @@ client = Client("myhost.konverso.ai")
 client.login("myuser", "mypassword")
 
 metrics = client.metric()
-print("Collected metrics (%s):" % (metrics))
-print(metrics.text)
-print(json.dumps(metrics.json(), indent=4))
+print(f"Collected metrics ({metrics}):")       # noqa: T201
+print(metrics.text)                            # noqa: T201
+print(json.dumps(metrics.json(), indent=4))    # noqa: T201
 
-r = client.conversation(username='bot')
-print("Post conversation (%s):" % (r))
-print(r.text)
+r = client.conversation(username="bot")
+print(f"Post conversation ({r}):")             # noqa: T201
+print(r.text)                                  # noqa: T201
 
 r = client.get_dashboard(1)
-print("Get dashboard (%s):" % (r))
-print(r.text)
+print(f"Get dashboard ({r}):")                 # noqa: T201
+print(r.text)                                  # noqa: T201
 
 client.logout()
