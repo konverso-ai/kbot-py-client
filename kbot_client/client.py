@@ -89,13 +89,14 @@ class Client:
         self.__reset_headers(r.json())
         self.schema()
 
-    def impersonate(self, username, usertype='local', external_auth='', timeout=5):
+    def impersonate(self, username, usertype='local', external_auth='', userdata=None, timeout=5):
         """Impersonate the given user"""
 
         r = self.request("post", "user/impersonate", data={
             "username": username,
             "im_type": usertype,
-            "external_auth": external_auth})
+            "external_auth": external_auth,
+            "userdata": userdata or {}})
 
         r.raise_for_status()
 
