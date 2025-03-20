@@ -77,6 +77,10 @@ class AsyncCallbackChatClient:
         if display_intro:
             self._callback(greeting_response.json())
 
+    @property
+    def conversation_uuid(self):
+        return self._conversation_uuid
+
     def _process_new_messages(self, messages_json, context):
         """Given a JSON response from the bot, extract two key information:
            - sender: The name of the bot
@@ -127,6 +131,28 @@ class AsyncCallbackChatClient:
         response = self._client.post(f"conversation/{self._type}/{self._conversation_uuid}/message", data=data)
         response.raise_for_status()
 
+    def attach(self, file_name, file_path):
+        """Send the given file to Kbot.
+
+           Args:
+               file_name (str): The real file name (e.g. "Daily Status.doc")
+               file_path (str): The complete file path (e.g. "/tmp/my_status.doc")               
+        """
+        data = {
+            'message': file_name,
+            'type': 'attachment',
+        }
+
+        files = {
+            'file': file_name,
+            'type': 'attachment',
+        }
+
+        with open(filepath, "rb") as fd:
+            response = self._client.post_file(f"conversation/{self._type}/{self._conversation_uuid}/message", data=data)
+
+        response.raise_for_status()
+    
     def get_response(self):
         """Collect the kbot response and call the callback for each received response"""
         # Wait for the response(s)
