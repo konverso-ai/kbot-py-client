@@ -32,6 +32,8 @@ import uuid
 import time
 
 class AsyncCallbackChatClient:
+    #pylint: disable=redefined-builtin
+    #pylint: disable=too-many-positional-arguments
     def __init__(self, client, type,
                  assistant = None,
                  exit_commands = ("stop", "exit"),
@@ -80,6 +82,10 @@ class AsyncCallbackChatClient:
     @property
     def conversation_uuid(self):
         return self._conversation_uuid
+
+    @property
+    def client(self):
+        return self._client
 
     def _process_new_messages(self, messages_json, context):
         """Given a JSON response from the bot, extract two key information:
@@ -143,16 +149,12 @@ class AsyncCallbackChatClient:
             'type': 'attachment',
         }
 
-        files = {
-            'file': file_name,
-            'type': 'attachment',
-        }
-
-        with open(filepath, "rb") as fd:
-            response = self._client.post_file(f"conversation/{self._type}/{self._conversation_uuid}/message", data=data)
-
+        with open(file_path, "rb") as fd:
+            response = self._client.post_file(f"conversation/{self._type}/{self._conversation_uuid}/message",
+                    data=data,
+                    files = {"file": (file_name, fd)})
         response.raise_for_status()
-    
+
     def get_response(self):
         """Collect the kbot response and call the callback for each received response"""
         # Wait for the response(s)
