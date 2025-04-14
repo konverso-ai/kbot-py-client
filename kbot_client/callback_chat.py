@@ -27,6 +27,15 @@ Here is a sample callback you may use, that would 'print' the responses:
 If using this module directly inside Kbot to delegate the processing to remote bots,
 please check also the kbot utility module: wf/remote_dialog.py that will map a Dialog instance
 with this AsyncCallbackChatClient
+
+The overall flow of a conversation is: 
+    - create()
+    - loop of:
+       - attach() (Optional)
+       - send()
+       - get_response()
+    - close()  (Optional, will otherwise close with a timeout)
+    - delete() (Optional)
 """
 import uuid
 import time
@@ -168,3 +177,11 @@ class AsyncCallbackChatClient:
             if stop:
                 # Time to ask for a new question
                 break
+
+    def close(self):
+        response = self._client.post(f"conversation/{self._type}/{self._conversation_uuid}/close")
+        response.raise_for_status()
+
+    def delete(self):
+        response = self._client.delete(f"conversation/{self._type}/{self._conversation_uuid}")
+        response.raise_for_status()
