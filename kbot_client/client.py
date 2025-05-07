@@ -95,7 +95,12 @@ class Client:
         self.__reset_headers(r.json())
         self.schema()
 
-    def impersonate(self, username: str, usertype: str = "local", external_auth: str = "", timeout: int = 5) -> None:
+    def impersonate(self,  # pylint: disable=too-many-positional-arguments
+                    username: str,
+                    usertype: str = "local",
+                    external_auth: str = "",
+                    userdata: dict | None = None,
+                    timeout: int = 5) -> None:
         """Impersonate the given user."""
         r = self.request("post", "user/impersonate", data={
             "username": username,

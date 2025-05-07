@@ -27,7 +27,7 @@ If using this module directly inside Kbot to delegate the processing to remote b
 please check also the kbot utility module: wf/remote_dialog.py
 that will map a Dialog instance with this AsyncCallbackChatClient
 
-The overall flow of a conversation is: 
+The overall flow of a conversation is:
     - create()
     - loop of:
        - attach() (Optional)
@@ -101,17 +101,15 @@ class AsyncCallbackChatClient:  # noqa: D101
             self._callback(greeting_response.json())
 
     @property
-    def conversation_uuid(self):
+    def conversation_uuid(self) -> str:  # noqa: D102
         return self._conversation_uuid
 
     @property
-    def client(self):
+    def client(self) -> Client:  # noqa: D102
         return self._client
 
-    def _process_new_messages(self, messages_json, context):
-        """Given a JSON response from the bot, extract two key information:
-           - sender: The name of the bot
-           - messages: A list of the JSON matching the type constraints such as:
+    def _process_new_messages(self, messages_json: dict | list[dict], context: str) -> bool:
+        """Extract information given a JSON response from the bot.
 
         The JSON is either a dict or a list of dicts. One dict contains at least:
             sender: The name of the bot
@@ -169,26 +167,27 @@ class AsyncCallbackChatClient:  # noqa: D101
         response = self._client.post(f"conversation/{self._type}/{self._conversation_uuid}/message", data=data)
         response.raise_for_status()
 
-    def attach(self, file_name, file_path):
+    def attach(self, file_name: str, file_path: str) -> None:
         """Send the given file to Kbot.
 
-           Args:
-               file_name (str): The real file name (e.g. "Daily Status.doc")
-               file_path (str): The complete file path (e.g. "/tmp/my_status.doc")               
+        Args:
+            file_name (str): The real file name (e.g. "Daily Status.doc")
+            file_path (str): The complete file path (e.g. "/tmp/my_status.doc")
+
         """
         data = {
-            'message': file_name,
-            'type': 'attachment',
+            "message": file_name,
+            "type": "attachment",
         }
 
-        with open(file_path, "rb") as fd:
+        with open(file_path, "rb") as fd:  # noqa: PTH123
             response = self._client.post_file(f"conversation/{self._type}/{self._conversation_uuid}/message",
                     data=data,
                     files = {"file": (file_name, fd)})
         response.raise_for_status()
 
-    def get_response(self):
-        """Collect the kbot response and call the callback for each received response"""
+    def get_response(self) -> None:
+        """Collect the kbot response and call the callback for each received response."""
         # Wait for the response(s)
         #
         while True:
@@ -202,10 +201,10 @@ class AsyncCallbackChatClient:  # noqa: D101
                 # Time to ask for a new question
                 break
 
-    def close(self):
+    def close(self) -> None:  # noqa: D102
         response = self._client.post(f"conversation/{self._type}/{self._conversation_uuid}/close")
         response.raise_for_status()
 
-    def delete(self):
+    def delete(self) -> None:  # noqa: D102
         response = self._client.delete(f"conversation/{self._type}/{self._conversation_uuid}")
         response.raise_for_status()

@@ -49,7 +49,9 @@ class ChatClient(ABC):  # noqa: D101
         #
         self._start_question_answer_loop(response.json().get("id"))
 
-    def _process_new_messages(self, messages_json: JsonType, context: Literal["response", "welcome"]) -> bool:  # noqa: C901
+    def _process_new_messages(self,  # noqa: C901
+                              messages_json: JsonType,
+                              context: Literal["response", "welcome"]) -> bool:
         """Given a JSON response from the bot, extract two key information.
 
         Args:
@@ -143,7 +145,9 @@ class ChatClient(ABC):  # noqa: D101
                     from bs4 import BeautifulSoup  # pylint: disable=import-error, import-outside-toplevel
                     message_value = BeautifulSoup(message.get("value"), "html.parser").get_text()
                 except:  # noqa: E722
-                    print("ERROR: HTML to Text conversion requested, but beautifull soup is not installed. Use: ")  # noqa: T201
+                    print(  # noqa: T201
+                        "ERROR: HTML to Text conversion requested, but beautifull soup is not installed. Use: ",
+                    )
                     print("pip3 install BeautifulSoup4")  # noqa: T201
                     message_value = message.get("value")
             else:
@@ -204,7 +208,11 @@ class ChatClient(ABC):  # noqa: D101
 class AsyncChatClient(ChatClient):
     """A Chatbot client that will pull for updates and display responses as they come."""
 
-    def __init__(self, client: "Client", pull_interval: float = 0.5, pull_timeout: int = 10, **kwargs: dict) -> None:  # noqa: D107
+    def __init__(self,  # noqa: D107
+                 client: "Client",
+                 pull_interval: float = 0.5,
+                 pull_timeout: int = 10,
+                 **kwargs: dict) -> None:
         self._pull_interval = pull_interval
         self._pull_timeout = pull_timeout
         super().__init__(client,**kwargs)
