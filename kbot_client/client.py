@@ -100,7 +100,8 @@ class Client:
         r = self.request("post", "user/impersonate", data={
             "username": username,
             "im_type": usertype,
-            "external_auth": external_auth})
+            "external_auth": external_auth,
+            "userdata": userdata or {}})
 
         r.raise_for_status()
 
