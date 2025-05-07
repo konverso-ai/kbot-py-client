@@ -19,7 +19,7 @@ class ChatClient(ABC):  # noqa: D101
         bye: str = "Bye, hope to see you again soon",
         assistant: str | None = None,
         exit_commands: tuple[str, ...] = ("stop", "exit"),
-        convert_html_to_text: bool = False,  # noqa: FBT001, FBT002
+        convert_html_to_text: bool = False,
     ) -> None:
         self._client = client
         self._render_types = render_types

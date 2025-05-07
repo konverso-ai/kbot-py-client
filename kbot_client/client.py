@@ -95,7 +95,7 @@ class Client:
         self.__reset_headers(r.json())
         self.schema()
 
-    def impersonate(self, username: str, usertype: str = "local", external_auth: str = "", timeout: int = 5) -> None:  # noqa: ARG002
+    def impersonate(self, username: str, usertype: str = "local", external_auth: str = "", timeout: int = 5) -> None:
         """Impersonate the given user."""
         r = self.request("post", "user/impersonate", data={
             "username": username,
@@ -171,7 +171,7 @@ class Client:
                         raise RuntimeError(msg)
                     # pylint: disable=eval-used
                     if value["name"] in kwargs:
-                        if not isinstance(kwargs[value["name"]], eval(value["type"])):
+                        if not isinstance(kwargs[value["name"]], eval(value["type"])):  # noqa: S307
                             msg = "Invalid type of attribute '{}'".format(value["name"])
                             raise RuntimeError(msg)
                         v = kwargs[value["name"]]
