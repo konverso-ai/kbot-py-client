@@ -10,7 +10,7 @@ from kbot_client.chat_client import JsonType
 class Client:
     """Base representation of Kbot instance."""
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-positional-arguments
         self,
         server: str,
         port: int = 443,
@@ -154,7 +154,13 @@ class Client:
         if js.get("user_id"):
             self._user_id = js["user_id"]
 
-    def __add_method(self, method: str, name: str, path: str, params: list, data: list, description: str) -> None:  # noqa: PLR0913
+    def __add_method(self,  # noqa: PLR0913 ; pylint: disable=too-many-positional-arguments
+                     method: str,
+                     name: str,
+                     path: str,
+                     params: list,
+                     data: list,
+                     description: str) -> None:
         """Add a new dynamic method, based on the schema.
 
         This provides "python method" wrapper on top of the kbot APIs.
@@ -167,12 +173,12 @@ class Client:
                 rargs[aname] = {}
                 for value in values:
                     if value["mandatory"] and value["name"] not in kwargs:
-                        msg = "Missed attribute '{}' in '{}'".format(value["name"], aname)
+                        msg = f"Missed attribute '{value["name"]}' in '{aname}'"
                         raise RuntimeError(msg)
                     # pylint: disable=eval-used
                     if value["name"] in kwargs:
                         if not isinstance(kwargs[value["name"]], eval(value["type"])):  # noqa: S307
-                            msg = "Invalid type of attribute '{}'".format(value["name"])
+                            msg = f"Invalid type of attribute '{value['name']}'"
                             raise RuntimeError(msg)
                         v = kwargs[value["name"]]
                     elif value["name"] not in kwargs and value["default"] is not None:
@@ -195,7 +201,7 @@ class Client:
         r.raise_for_status()
         self.__reset_headers(r.json())
 
-    def __request(  # noqa: PLR0913
+    def __request(  # noqa: PLR0913 ; pylint: disable=too-many-positional-arguments
         self, method: str,
         uri : str | None = None,
         data: JsonType = None,
@@ -240,7 +246,7 @@ class Client:
 
         return r
 
-    def request(  # noqa: D102
+    def request(  # noqa: D102 ; pylint: disable=too-many-positional-arguments
         self,
         method: str,
         uri: str,

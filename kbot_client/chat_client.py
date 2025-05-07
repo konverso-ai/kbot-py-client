@@ -10,7 +10,7 @@ JsonType = dict[str, "JsonType"] | list["JsonType"] | str | int | None
 
 
 class ChatClient(ABC):  # noqa: D101
-    def __init__(  # noqa: D107, PLR0913
+    def __init__(  # noqa: D107, PLR0913 ; pylint: disable=too-many-positional-arguments
         self,
         client: "Client",
         render_types: tuple[str, ...] = ("text", "html", "markdown"),
@@ -140,7 +140,7 @@ class ChatClient(ABC):  # noqa: D101
         elif message_format == "html":
             if self._convert_html_to_text:
                 try:
-                    from bs4 import BeautifulSoup
+                    from bs4 import BeautifulSoup  # pylint: disable=import-error, import-outside-toplevel
                     message_value = BeautifulSoup(message.get("value"), "html.parser").get_text()
                 except:  # noqa: E722
                     print("ERROR: HTML to Text conversion requested, but beautifull soup is not installed. Use: ")  # noqa: T201

@@ -32,13 +32,13 @@ import uuid
 from collections.abc import Callable
 from typing import Literal
 
-from kbot_client.client import Client
+from kbot_client import Client
 
 
 class AsyncCallbackChatClient:  # noqa: D101
-    def __init__(self,  # noqa: PLR0913
+    def __init__(self,  # noqa: PLR0913 ; pylint: disable=too-many-positional-arguments
                  client: Client,
-                 type: Literal["chat", "agentic"],  # noqa: A002
+                 type: Literal["chat", "agentic"],  # noqa: A002 ; pylint: disable=redefined-builtin
                  assistant: str | None = None,
                  exit_commands: tuple[str, ...] = ("stop", "exit"),
                  callback: Callable | None = None,

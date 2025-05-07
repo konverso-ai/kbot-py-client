@@ -11,7 +11,7 @@ History:
     - 2020/11/02: Amédée: Initial class implementation
 """
 
-from client import Client
+from kbot_client.client import Client
 
 
 class ClientGroup(list):  # noqa: D101

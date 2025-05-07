@@ -99,7 +99,7 @@ expected-line-ending-format = "LF"
 ignore-long-lines = "^\\s*(# )?<?https?://\\S+>?$"
 indent-after-paren = 4
 indent-string = "    "
-max-line-length = 160
+max-line-length = 120
 max-module-lines = 1000
 single-line-class-stmt = false
 single-line-if-stmt = false
@@ -171,6 +171,10 @@ valid-metaclass-classmethod-first-arg = ["mcs"]
 
 [tool.pylint.exceptions]
 overgeneral-exceptions = ["builtins.Exception"]
+
+[tool.pylint.'MASTER']
+ignore-patterns = "test*.py"
+
 
 [tool.pytest]
 testpaths = "tests"
