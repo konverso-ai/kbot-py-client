@@ -178,20 +178,21 @@ class Client:
             for aname, values in (("params", params), ("data", data)):
                 rargs[aname] = {}
                 for value in values:
-                    if value["mandatory"] and value["name"] not in kwargs:
-                        msg = f"Missed attribute '{value["name"]}' in '{aname}'"
+                    value_name = value["name"]
+                    if value["mandatory"] and value_name not in kwargs:
+                        msg = f"Missed attribute '{value_name}' in '{aname}'"
                         raise RuntimeError(msg)
                     # pylint: disable=eval-used
-                    if value["name"] in kwargs:
-                        if not isinstance(kwargs[value["name"]], eval(value["type"])):  # noqa: S307
-                            msg = f"Invalid type of attribute '{value['name']}'"
+                    if value_name in kwargs:
+                        if not isinstance(kwargs[value_name], eval(value["type"])):  # noqa: S307
+                            msg = f"Invalid type of attribute '{value_name}'"
                             raise RuntimeError(msg)
                         v = kwargs[value["name"]]
-                    elif value["name"] not in kwargs and value["default"] is not None:
+                    elif value_name not in kwargs and value["default"] is not None:
                         v = value["default"]
                     else:
                         continue
-                    rargs[aname][value["name"]] = v
+                    rargs[aname][value_name] = v
             return self.__request(method, uri=path % args, **rargs)
         endpoint.__doc__ = description
         endpoint.__name__ = name
