@@ -1,10 +1,9 @@
 __doc__ = """
 A command line chatbot interface
 
-Compatible with kbot version <= 2024.01
+Compatible with kbot version >= 2024.02
 
 """
-
 import uuid
 import time
 from abc import ABC, abstractmethod
@@ -13,11 +12,14 @@ class ChatClient(ABC):
     def __init__(self, client,
                  render_types=("text", "html", "markdown"),
                  prompt="{sender}> {message}",
+                 type="chat",
                  user_prompt = "User> ",
                  bye = "Bye, hope to see you again soon",
                  assistant = None,
                  exit_commands = ("stop", "exit"),
-                 convert_html_to_text=False):
+                 display_intro=True,
+                 convert_html_to_text=False,
+                 show_streaming_parts=False):
 
         self._client = client
         self._render_types = render_types
@@ -27,22 +29,35 @@ class ChatClient(ABC):
         self._exit_commands = exit_commands
         self._assistant = assistant
         self._convert_html_to_text = convert_html_to_text
+        self._type = type
+        self._conversation_id = None
+        self._show_streaming_parts = show_streaming_parts
+
+        data={
+            "username": "bot",
+            "type": type,
+            "assistant_id": assistant
+        }
 
         # Create a new conversation
         #
-        response = self._client.post("conversation",
-                data={
-                    "username": "bot",
-                    "assistant": assistant})
+        response = self._client.post(f"conversation/{self._type}",
+                                     data=data)
         response.raise_for_status()
+        self._conversation_id = response.json().get("id")
 
-        # Print the first welcome message
-        #
-        self._process_new_messages(response.json(), context="welcome")
+        if display_intro:
+            greeting_response = self._client.post(f"conversation/{self._type}/greeting",
+                                                  data=data)
+            greeting_response.raise_for_status()
+
+            # Print the first welcome message
+            #
+            self._process_new_messages(greeting_response.json(), context="welcome")
 
         # Loop waiting for user questions and then waiting for the bot response
         #
-        self._start_question_answer_loop(response.json().get("id"))
+        self._start_question_answer_loop()
 
     def _process_new_messages(self, messages_json, context):
         """Given a JSON response from the bot, extract two key information:
@@ -73,6 +88,7 @@ class ChatClient(ABC):
 
            Returns a tuple of two elements: sender, messages
         """
+        #print(messages_json)
 
         stop = False
         if context == "welcome":
@@ -84,7 +100,7 @@ class ChatClient(ABC):
                 if message.get("type") != "message":
                     continue
 
-                for message_content in message.get("message"):
+                for message_content in message.get("parts"):
                     if message_content.get("format") in self._render_types:
                         self._display_response(message_content)
 
@@ -99,16 +115,15 @@ class ChatClient(ABC):
                 if message_type == "typing":
                     continue
 
-                self._sender = one_message.get("sender").get("name")
+                if message_type == "wait_user_input":
+                    stop = True
 
-                # Deprecated. Applicable only for old kbot versions (before 2024.01)
-                #if message_type == "stop_topic":
-                #    stop = True
+                self._sender = one_message.get("sender").get("name")
 
                 if one_message.get("type") != "message":
                     continue
 
-                for message_content in one_message.get("message"):
+                for message_content in one_message.get("parts"):
                     if message_content.get("format") in self._render_types:
                         self._display_response(message_content)
 
@@ -140,6 +155,9 @@ class ChatClient(ABC):
             else:
                 message_value = message.get('value')
         elif message_format == "markdown":
+            #print("Markdown part: %s", message)
+            if not self._show_streaming_parts and message.get("mode") == "append":
+                return
             message_value = message.get('value')
 
         else:
@@ -149,7 +167,7 @@ class ChatClient(ABC):
         # finally display the result to the user
         print(self._prompt.format(sender=self._sender, message=message_value))
 
-    def _start_question_answer_loop(self, conversation_id):
+    def _start_question_answer_loop(self):
 
         # Start the chatbot, in a loop
         # We stop when user type "exit" or EOF (Ctrl D)
@@ -170,26 +188,25 @@ class ChatClient(ABC):
                 print(self._bye)
                 break
 
-            self._send_question(question, conversation_id)
-            self._get_response(conversation_id)
+            self._send_question(question)
+            self._get_response()
 
 
-    def _send_question(self, question, conversation_id):
+    def _send_question(self, question):
         # Send the user question to Kbot.
         #
         data = {
-            'conversation_id': conversation_id,
+            'message_id': str(uuid.uuid4()),
             'type': 'message',
             'message': question,
-            'message_id': str(uuid.uuid4()),
-            'assistant': self._assistant
+            'status': 'sending',
+            'fromUser': True,
         }
-
-        response = self._client.post(f"conversation/{conversation_id}/message", data=data)
+        response = self._client.post(f"conversation/{self._type}/{self._conversation_id}/message", data=data)
         response.raise_for_status()
 
     @abstractmethod
-    def _get_response(self, conversation_id):
+    def _get_response(self):
         """Collect the kbot response"""
 
 class AsyncChatClient(ChatClient):
@@ -201,12 +218,12 @@ class AsyncChatClient(ChatClient):
         self._pull_timeout = pull_timeout
         super().__init__(client,**kwargs)
 
-    def _get_response(self, conversation_id):
+    def _get_response(self):
         # Wait for the response(s)
         #
         while True:
             time.sleep(self._pull_interval)
-            response = self._client.get(f"conversation/{conversation_id}/messages", params={"timeout": self._pull_timeout})
+            response = self._client.get(f"conversation/{self._type}/{self._conversation_id}/messages", params={"timeout": self._pull_timeout})
             response.raise_for_status()
 
             stop = self._process_new_messages(response.json(), context="response")
@@ -218,10 +235,10 @@ class SyncChatClient(ChatClient):
     """A Chatbot client that will wait for full response from the bot before displaying to the user
     """
 
-    def _get_response(self, conversation_id):
+    def _get_response(self):
         # Wait for the response(s)
         #
         params = {"wait": "true"}
-        response = self._client.get(f"conversation/{conversation_id}/messages", params=params)
+        response = self._client.get(f"conversation/{self._conversation_id}/messages", params=params)
         response.raise_for_status()
         self._process_new_messages(response.json(), context="response")

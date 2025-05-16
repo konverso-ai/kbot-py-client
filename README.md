@@ -53,6 +53,29 @@ cli = Client("mybot.konverso.ai", api_key="xxxxxxxxxxxxxxxxxxx")
 ```
 The API Key may be created for a given user, with relevant permissions, from the Configuration / Users & Roles / Users / Accounts panel. Create an account of type "API Key"
 
+### User impersonation
+If you have an API key created with sufficient permissions, then you can use the client impersonation.
+```python
+cli = Client("mybot.konverso.ai", api_key="xxxxxxxxxxxxxxxxxxx")
+
+user_name = "joe@company.com"
+external_auth=''
+
+cli.impersonate(user_name, 'local', external_auth=external_auth)
+```
+The above will generate a client for the user 'user_name'. This user must exists. If you are in an integration where you need to create the user, then we suggest to add a call first to the lookup/create before. 
+```python
+response = cli.post("user/lookup_create", data={
+    "user_name": user_email,
+    "account_name": user_email,
+    "account_type": "local",
+    "external_auth": external_auth,
+})
+response.raise_for_status()
+```
+
+The API Key may be created for a given user, with relevant permissions, from the Configuration / Users & Roles / Users / Accounts panel. Create an account of type "API Key"
+
 ## Collect metrics
 Once authenticated, you can for example retrieve useful usage metrics, these can be used by a Monitoring application or for some business intelligence rendering:
 ```python
@@ -220,7 +243,7 @@ print("Syncing is done :)")
 ## A command line chatbot
 We provide a sample command line chatbot, available in Sync or Async mode
 
-### Code sample
+### Code sample - (kbot version < 2024.02)
 In this example, we simply initialize a chatbot client after creating a relevant User and Impersonating to it.
 This is a good example of implementation of a custom Client for the Kbot product.
 
@@ -250,4 +273,23 @@ cli.impersonate(user_email, 'local', external_auth)
 
 # Start the chat
 AsyncChatClient(cli, assistant=assistant, convert_html_to_text=True)
+```
+Note that the above example is using an asynchronous call, meaning the client will listen for bot messages
+in a loop and publish the messages as they are received
+
+Alternatively, you can also use our synchronous client. This will listen for messages and only return once
+all the messages are received for the user question.
+
+```python
+from kbot_client.chat_client_2 import SyncChatClient
+...
+SyncChatClient(cli, assistant=assistant, convert_html_to_text=True)
+```
+
+### Code sample (kbot version >= 2024.02)
+The code is the same, but use a different module import since the conversation
+model was changed slightly. 
+
+```python
+from kbot_client.chat_client_2 import AsyncChatClient, SyncChatClient
 ```
