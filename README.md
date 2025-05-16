@@ -53,6 +53,29 @@ cli = Client("mybot.konverso.ai", api_key="xxxxxxxxxxxxxxxxxxx")
 ```
 The API Key may be created for a given user, with relevant permissions, from the Configuration / Users & Roles / Users / Accounts panel. Create an account of type "API Key"
 
+### User impersonation
+If you have an API key created with sufficient permissions, then you can use the client impersonation.
+```python
+cli = Client("mybot.konverso.ai", api_key="xxxxxxxxxxxxxxxxxxx")
+
+user_name = "joe@company.com"
+external_auth=''
+
+cli.impersonate(user_name, 'local', external_auth=external_auth)
+```
+The above will generate a client for the user 'user_name'. This user must exists. If you are in an integration where you need to create the user, then we suggest to add a call first to the lookup/create before. 
+```python
+response = cli.post("user/lookup_create", data={
+    "user_name": user_email,
+    "account_name": user_email,
+    "account_type": "local",
+    "external_auth": external_auth,
+})
+response.raise_for_status()
+```
+
+The API Key may be created for a given user, with relevant permissions, from the Configuration / Users & Roles / Users / Accounts panel. Create an account of type "API Key"
+
 ## Collect metrics
 Once authenticated, you can for example retrieve useful usage metrics, these can be used by a Monitoring application or for some business intelligence rendering:
 ```python
