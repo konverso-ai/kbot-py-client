@@ -220,7 +220,7 @@ print("Syncing is done :)")
 ## A command line chatbot
 We provide a sample command line chatbot, available in Sync or Async mode
 
-### Code sample
+### Code sample - (kbot version < 2024.02)
 In this example, we simply initialize a chatbot client after creating a relevant User and Impersonating to it.
 This is a good example of implementation of a custom Client for the Kbot product.
 
@@ -250,4 +250,23 @@ cli.impersonate(user_email, 'local', external_auth)
 
 # Start the chat
 AsyncChatClient(cli, assistant=assistant, convert_html_to_text=True)
+```
+Note that the above example is using an asynchronous call, meaning the client will listen for bot messages
+in a loop and publish the messages as they are received
+
+Alternatively, you can also use our synchronous client. This will listen for messages and only return once
+all the messages are received for the user question.
+
+```python
+from kbot_client.chat_client_2 import SyncChatClient
+...
+SyncChatClient(cli, assistant=assistant, convert_html_to_text=True)
+```
+
+### Code sample (kbot version >= 2024.02)
+The code is the same, but use a different module import since the conversation
+model was changed slightly. 
+
+```python
+from kbot_client.chat_client_2 import AsyncChatClient, SyncChatClient
 ```
