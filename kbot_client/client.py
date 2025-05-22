@@ -23,6 +23,9 @@ class Client:
         self.host = server
         self.verify = verify
 
+        # A version, in the formation "YEAR-V", such as 2024.02
+        self.version = None
+
         if str(port).endswith('443'):
             proto = 'https'
         else:
@@ -113,6 +116,9 @@ class Client:
         r.raise_for_status()
 
         j = r.json()
+
+        self.version = j.get("version")
+
         for epoint in j.get('endpoints', []):
             if epoint['name'] != 'schema':
                 self.__add_method(epoint['method'], epoint['name'], epoint['path'], epoint['params'], epoint['data'], epoint.get('description', ''))

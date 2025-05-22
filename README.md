@@ -57,21 +57,10 @@ The API Key may be created for a given user, with relevant permissions, from the
 If you have an API key created with sufficient permissions, then you can use the client impersonation.
 ```python
 cli = Client("mybot.konverso.ai", api_key="xxxxxxxxxxxxxxxxxxx")
-
-user_name = "joe@company.com"
-external_auth=''
-
-cli.impersonate(user_name, 'local', external_auth=external_auth)
+cli.impersonate(user_name, 'local', external_auth='')
 ```
 The above will generate a client for the user 'user_name'. This user must exists. If you are in an integration where you need to create the user, then we suggest to add a call first to the lookup/create before. 
 ```python
-response = cli.post("user/lookup_create", data={
-    "user_name": user_email,
-    "account_name": user_email,
-    "account_type": "local",
-    "external_auth": external_auth,
-})
-response.raise_for_status()
 ```
 
 The API Key may be created for a given user, with relevant permissions, from the Configuration / Users & Roles / Users / Accounts panel. Create an account of type "API Key"
@@ -108,6 +97,29 @@ Note the search context UUID passed in the URL, which you may retrieve from our 
 ```python
 r = client.request("post", "searchcontext/234923-235-sjdhfs-kdjf/search",
     {
+        "sentence": "how to create a classifier",
+        "num_results": 20,
+        #"variables": {'kbs': {'value': ['Confluence_Security_KSEC']}}
+    }
+)
+```
+
+## Retrieve object details
+You may retrieve list of defined objects. Note that only objects visibled to the logged in users will be returned.
+
+Here is a sample code that simply checks for a few objects existance:
+
+## Get list of objects and check if object with name is present in response
+```python
+for unit, name in (('intention' ,'Create ticket'),
+                    ('knowledge_base', 'faq'),
+                    ('workflow', 'Transfer to Agent')):
+    print(f"Get list of '{unit}'")
+    objs = cli.unit(unit)
+    if objs:
+        # Create dict with
+        # - key : object name
+        # - value : object json data
         "sentence": "how to create a classifier",
         "num_results": 20,
         #"variables": {'kbs': {'value': ['Confluence_Security_KSEC']}}
@@ -215,29 +227,6 @@ with open(filepath, "rb") as fd:
                 "name": file_name,
             }
     response = self.client.post_file("attachment",
-                                                data=data,
-                                                params=params,
-                                                files=files)
-```
-
-## Uploading a batch of files to the file manager
-
-### Prerequisites
-
-* An API key
-* The UUID of the folder that will receive the files you want to upload
-
-### Code sample
-In this example, we simply upload the content of a directory to a folder in the file manager.
-```python
-from kbot_client import Client
-from kbot_client.folder_sync import FolderSync
-
-client = Client("mybot.konverso.ai", api_key="17ebXXXXXXXXXXXXXXXXXXXXX")
-
-syncer = FolderSync(client)
-syncer.sync("/tmp/my_source_folder/", "1831f-XXXXXXXXXXXXXXXXXXXXXXX")
-print("Syncing is done :)")
 ```
 
 ## A command line chatbot
@@ -251,7 +240,7 @@ This is a good example of implementation of a custom Client for the Kbot product
 # Create your client
 import json
 from kbot_client import Client
-from kbot_client.chat_client import AsyncChatClient, SyncChatClient
+from kbot_client import chatbot_client
 
 cli = Client("mytenant.konverso.ai", api_key="mykey")
 
@@ -272,24 +261,16 @@ response.raise_for_status()
 cli.impersonate(user_email, 'local', external_auth)
 
 # Start the chat
-AsyncChatClient(cli, assistant=assistant, convert_html_to_text=True)
+chatbot_client.run(cli, assistant=assistant, convert_html_to_text=True)
 ```
-Note that the above example is using an asynchronous call, meaning the client will listen for bot messages
+Note that the above example is using a asynchronous call, meaning the client will listen for bot messages
 in a loop and publish the messages as they are received
 
 Alternatively, you can also use our synchronous client. This will listen for messages and only return once
 all the messages are received for the user question.
 
 ```python
-from kbot_client.chat_client_2 import SyncChatClient
+from kbot_client import chatbot_client
 ...
-SyncChatClient(cli, assistant=assistant, convert_html_to_text=True)
-```
-
-### Code sample (kbot version >= 2024.02)
-The code is the same, but use a different module import since the conversation
-model was changed slightly. 
-
-```python
-from kbot_client.chat_client_2 import AsyncChatClient, SyncChatClient
+chatbot_client.run(mode="synchronous", cli, assistant=assistant, convert_html_to_text=True)
 ```
