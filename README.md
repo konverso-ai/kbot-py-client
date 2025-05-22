@@ -162,7 +162,7 @@ else:
     print("Could not create conversation due to: ", r.text)
 ```
 
-## Command line chatbot
+## User creation and impersonation
 The following sample is a complete example you may use to kick off a chat for a given user with the kbot chatbot.
 Here there is no user authentication, but impersonation instead, and user/lookup. This example is a good starting point if you are looking at implementing your own chat interface on top of Kbot.
 ```python
