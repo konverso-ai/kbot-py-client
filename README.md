@@ -109,24 +109,6 @@ You may retrieve list of defined objects. Note that only objects visibled to the
 
 Here is a sample code that simply checks for a few objects existance:
 
-## Get list of objects and check if object with name is present in response
-```python
-for unit, name in (('intention' ,'Create ticket'),
-                    ('knowledge_base', 'faq'),
-                    ('workflow', 'Transfer to Agent')):
-    print(f"Get list of '{unit}'")
-    objs = cli.unit(unit)
-    if objs:
-        # Create dict with
-        # - key : object name
-        # - value : object json data
-        "sentence": "how to create a classifier",
-        "num_results": 20,
-        #"variables": {'kbs': {'value': ['Confluence_Security_KSEC']}}
-    }
-)
-```
-
 ## Retrieve object details
 You may retrieve list of defined objects. Note that only objects visibled to the logged in users will be returned.
 
@@ -229,10 +211,29 @@ with open(filepath, "rb") as fd:
     response = self.client.post_file("attachment",
 ```
 
+## Uploading a batch of files to the file manager
+
+### Prerequisites
+
+* An API key
+* The UUID of the folder that will receive the files you want to upload
+
+### Code sample
+In this example, we simply upload the content of a directory to a folder in the file manager.
+```python
+from kbot_client import Client
+from kbot_client.folder_sync import FolderSync
+
+client = Client("mybot.konverso.ai", api_key="17ebXXXXXXXXXXXXXXXXXXXXX")
+
+syncer = FolderSync(client)
+syncer.sync("/tmp/my_source_folder/", "1831f-XXXXXXXXXXXXXXXXXXXXXXX")
+print("Syncing is done :)")
+````
+
 ## A command line chatbot
 We provide a sample command line chatbot, available in Sync or Async mode
 
-### Code sample - (kbot version < 2024.02)
 In this example, we simply initialize a chatbot client after creating a relevant User and Impersonating to it.
 This is a good example of implementation of a custom Client for the Kbot product.
 
