@@ -104,17 +104,11 @@ r = client.request("post", "searchcontext/234923-235-sjdhfs-kdjf/search",
 )
 ```
 
-## Retrieve object details
-You may retrieve list of defined objects. Note that only objects visibled to the logged in users will be returned.
-
-Here is a sample code that simply checks for a few objects existance:
-
-## Retrieve object details
-You may retrieve list of defined objects. Note that only objects visibled to the logged in users will be returned.
-
-Here is a sample code that simply checks for a few objects existance:
-
 ## Get list of objects and check if object with name is present in response
+You may retrieve list of defined objects. Note that only objects visibled to the logged in users will be returned.
+
+Here is a sample code that simply checks for a few objects existance:
+
 ```python
 for unit, name in (('intention' ,'Create ticket'),
                     ('knowledge_base', 'faq'),
