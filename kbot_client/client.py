@@ -95,11 +95,13 @@ class Client:
     def impersonate(self, username, usertype='local', external_auth='', userdata=None, timeout=5):
         """Impersonate the given user"""
 
-        r = self.request("post", "user/impersonate", data={
-            "username": username,
-            "im_type": usertype,
-            "external_auth": external_auth,
-            "userdata": userdata or {}})
+        r = self.request("post", "user/impersonate",
+            data={
+                "username": username,
+                "im_type": usertype,
+                "external_auth": external_auth,
+                "userdata": userdata or {}},
+            timeout=timeout)
 
         r.raise_for_status()
 
@@ -178,11 +180,11 @@ class Client:
     def __refresh(self):
         r = requests.post(self.url + "/api/refresh",
                           data=json.dumps({"refresh_token": self.__refresh_token}),
-                          headers=self._headers)
+                          headers=self._headers, timeout=5)
         r.raise_for_status()
         self.__reset_headers(r.json())
 
-    def __request(self, method: str, uri : str = None, data: dict = None, params: dict = None, files: dict = None, attempt=0):
+    def __request(self, method: str, uri : str = None, data: dict = None, params: dict = None, files: dict = None, attempt=0,  timeout=None):
         if files:
             # For file upload, the data must be a dictionnary
             dump_data = data
@@ -196,7 +198,8 @@ class Client:
         else:
             headers = self._headers
 
-        r = requests.request(method.upper(), self.url + '/api/%s/' % (uri), params=params, data=dump_data, headers=headers, files=files, verify=self.verify)
+        r = requests.request(method.upper(), self.url + '/api/%s/' % (
+            uri), params=params, data=dump_data, headers=headers, files=files, verify=self.verify, timeout=timeout)
 
         if r.status_code == 401:
             # Refresh the token
@@ -215,11 +218,11 @@ class Client:
 
         return r
 
-    def request(self, method: str, uri: str, data: dict = None, params: dict = None, files: dict = None):
-        return self.__request(method, uri=uri, data=data, params=params, files=files)
+    def request(self, method: str, uri: str, data: dict = None, params: dict = None, files: dict = None, timeout=None):
+        return self.__request(method, uri=uri, data=data, params=params, files=files, timeout=timeout)
 
-    def unit(self, name: str, params=None) -> dict:
-        r = self.get(name, params)
+    def unit(self, name: str, params=None, timeout=None) -> dict:
+        r = self.get(name, params, timeout=timeout)
         if r:
             return r.json()
         return None
@@ -228,13 +231,13 @@ class Client:
         response = []
 
         data = {'type': 'message', 'message': message}
-        r = self.request("post", f'conversation/{cid}/message', data)
+        r = self.request("post", f'conversation/{cid}/message', data, timeout=timeout)
 
         r.raise_for_status()
 
         curtime = time.time()
         while timeout > 0:
-            r = self.get(f'conversation/{cid}')
+            r = self.get(f'conversation/{cid}', timeout=timeout)
 
             r.raise_for_status()
 
@@ -251,7 +254,7 @@ class Client:
             timeout = timeout + curtime - time.time()
         return response
 
-    def logout(self):
+    def logout(self, timeout=None):
         """Logout from local channel"""
         if self._login:
 
@@ -261,24 +264,24 @@ class Client:
             #     self._process('logout', 1)
 
             # Logout from the APIs
-            requests.post(self.url + '/api/logout', headers=self._headers, verify=self.verify)
+            self.request("post", self.url + '/api/logout', timeout=timeout)
 
     #
     # In addition to the Generated and built in API methods, we have the classic base REST methods
     #
-    def get(self, unit, params=None):
-        return self.__request("get", unit, params=params)
+    def get(self, unit, params=None, timeout=None):
+        return self.__request("get", unit, params=params, timeout=timeout)
 
-    def put(self, unit, data=None):
-        return self.__request("put", unit, data=data)
+    def put(self, unit, data=None, timeout=None):
+        return self.__request("put", unit, data=data, timeout=timeout)
 
-    def post(self, unit, data=None):
-        return self.__request("post", unit, data=data)
+    def post(self, unit, data=None, params=None, timeout=None):
+        return self.__request("post", unit, data=data, params=params, timeout=timeout)
 
-    def delete(self, unit, params=None):
-        return self.__request("delete", unit, params=params)
+    def delete(self, unit, params=None, timeout=None):
+        return self.__request("delete", unit, params=params, timeout=timeout)
 
-    def post_file(self, unit, data, params=None, files=None):
+    def post_file(self, unit, data, params=None, files=None, timeout=None):
         """Attach the given files.
            Sample parameter values:
                unit = "attachment"
@@ -293,7 +296,7 @@ class Client:
                    "name": f,
                }
         """
-        return self.__request("post", unit, params=params, data=data, files=files)
+        return self.__request("post", unit, params=params, data=data, files=files, timeout=timeout)
 
 class UpKbotClient(Client):
     """Represents a currently reachable Kbot instance"""
