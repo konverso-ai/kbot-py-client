@@ -21,7 +21,11 @@ def _get_chatbot_instance(version, class_name, **kwargs):
     return cls(**kwargs)
 
 def run(mode="synchronous", **kwargs):
-    """Starts an interactive ChatClient for the given client, in the selected mode"""
+    """Starts an interactive ChatClient for the given client, in the selected mode
+
+    Arguments:
+        - mode: One of "synchronous" or "asynchronous"
+    """
 
     client = kwargs.get("client")
     if not client:
