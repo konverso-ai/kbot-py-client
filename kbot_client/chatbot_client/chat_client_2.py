@@ -92,7 +92,7 @@ class ChatClient(ABC):
 
         stop = False
         if context == "welcome":
-            self._sender = messages_json.get("sender").get("name")
+            self._sender = messages_json.get("sender", {}).get("name", "")
 
             for message in messages_json.get("messages"):
                 message_type = message.get("type")
@@ -239,6 +239,6 @@ class SyncChatClient(ChatClient):
         # Wait for the response(s)
         #
         params = {"wait": "true"}
-        response = self._client.get(f"conversation/{self._conversation_id}/messages", params=params)
+        response = self._client.get(f"conversation/{self._type}/{self._conversation_id}/messages", params=params)
         response.raise_for_status()
         self._process_new_messages(response.json(), context="response")

@@ -256,10 +256,12 @@ response.raise_for_status()
 cli.impersonate(user_email, 'local', external_auth)
 
 # Start the chat
-chatbot_client.run(cli, assistant=assistant, convert_html_to_text=True)
+chatbot_client.run(client=cli, assistant=assistant, convert_html_to_text=True, mode="asynchronous")
 ```
 Note that the above example is using a asynchronous call, meaning the client will listen for bot messages
 in a loop and publish the messages as they are received
+
+For a simple chatbot, you do not need to provide the 'assistant' parameter.
 
 Alternatively, you can also use our synchronous client. This will listen for messages and only return once
 all the messages are received for the user question.
@@ -267,5 +269,5 @@ all the messages are received for the user question.
 ```python
 from kbot_client import chatbot_client
 ...
-chatbot_client.run(mode="synchronous", cli, assistant=assistant, convert_html_to_text=True)
+chatbot_client.run(mode="synchronous", client=cli, assistant=assistant, convert_html_to_text=True)
 ```
