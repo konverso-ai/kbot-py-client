@@ -1,0 +1,62 @@
+[MASTER]
+extension-pkg-whitelist = []
+ignore = ["CVS", ".git", ".ruff_cache", ".venv"]
+ignore-patterns = []
+jobs = 1
+load-plugins = ["pylint.extensions.no_self_use"]
+persistent = true
+unsafe-load-any-extension = false
+
+[MESSAGES CONTROL]
+confidence = []
+disable = [
+    "invalid-name",
+    "fixme",
+    "too-many-arguments",
+    "too-many-locals",
+    "too-many-branches",
+    "bare-except",
+    "broad-except",
+    "no-self-use",
+    "too-few-public-methods",
+    "too-many-public-methods",
+    "too-many-instance-attributes",
+    "too-many-nested-blocks",
+    "too-many-statements",
+    "too-many-return-statements",
+    "unused-argument",
+    "too-many-ancestors",
+    "wildcard-import",
+    "abstract-method",
+    "missing-docstring"
+]
+enable = []
+
+# Active toutes les autres règles (logique, typage, structure)
+enable=all
+
+[TYPECHECK]
+ignore-mixin-members=yes
+ignored-modules=
+ignored-classes=
+
+[FORMAT]
+# Déjà géré par Ruff
+max-line-length=88
+
+[REPORTS]
+evaluation = "10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)"
+msg-template = "{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
+output-format = "colorized"
+reports = true
+score = true
+
+[DESIGN]
+max-args=10
+max-attributes=10
+max-branches=12
+max-locals=15
+max-returns=6
+max-statements=50
+max-public-methods=20
+
