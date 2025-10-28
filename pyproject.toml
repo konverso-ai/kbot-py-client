@@ -3,6 +3,8 @@ name = "kbot-py-client"
 version = "2.1.3"
 requires-python = ">=3.10"
 description = "Client for Konverso Kbot."
+readme = "README.md"
+license = "MIT"
 authors = [
     { name = "Konverso", email = "contact@konverso.ai" }
 ]
@@ -11,8 +13,10 @@ classifiers=[
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-readme = "README.md"
-license = "MIT"
+dependencies = [
+    "requests>=2.32.5",
+]
+
 [project.urls]
 Homepage = "https://www.konverso.ai/"
 Source = "https://github.com/konverso-ai/kbot-py-client"
@@ -24,10 +28,6 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "kbot_client"
 module-root = ""
-
-dependencies = [
-    "requests>=2.32.5",
-]
 
 [dependency-groups]
 lint = [
