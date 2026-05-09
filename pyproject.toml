@@ -22,7 +22,7 @@ Homepage = "https://www.konverso.ai/"
 Source = "https://github.com/konverso-ai/kbot-py-client"
 
 [build-system]
-requires = ["uv_build>=0.9.4,<0.10.0"]
+requires = ["uv_build>=0.11.6,<0.12.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -32,5 +32,5 @@ module-root = ""
 [dependency-groups]
 lint = [
     "pylint>=4.0.1",
-    "ruff==0.14.1",
+    "ruff==0.15.10",
 ]
