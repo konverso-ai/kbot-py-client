@@ -7,6 +7,11 @@ on:
   pull_request:
     types: [opened, edited, synchronize]
 
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: read
+  
 env:
   AWS_REGION: eu-west-3
 
@@ -89,7 +94,7 @@ jobs:
             --output text)
           echo "UV_INDEX_KONVERSO_AWS_PYPI_PROXY_USERNAME=aws" >> "$GITHUB_ENV"
           echo "UV_INDEX_KONVERSO_AWS_PYPI_PROXY_PASSWORD=$TOKEN" >> "$GITHUB_ENV"
-          
+
       - name: Install Dependencies
         run: uv sync --all-groups --locked --no-editable
 
