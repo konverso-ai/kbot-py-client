@@ -7,6 +7,9 @@ on:
   pull_request:
     types: [opened, edited, synchronize]
 
+env:
+  AWS_REGION: eu-west-3
+
 jobs:
   test:
     if: ${{ github.event_name == 'pull_request' }}
@@ -22,9 +25,27 @@ jobs:
           python-version: '3.12'
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-duration-seconds: 3600
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_P }}
+
+      - name: Authenticate uv with AWS CodeArtifact
+        run: |
+          TOKEN=$(aws codeartifact get-authorization-token \
+            --domain konverso \
+            --domain-owner 872515286329 \
+            --region "${AWS_REGION}" \
+            --query authorizationToken \
+            --output text)
+          echo "UV_INDEX_KONVERSO_AWS_PYPI_PROXY_USERNAME=aws" >> "$GITHUB_ENV"
+          echo "UV_INDEX_KONVERSO_AWS_PYPI_PROXY_PASSWORD=$TOKEN" >> "$GITHUB_ENV"
 
       - name: Install Dependencies
         run: uv sync --all-groups --locked --no-editable
@@ -47,10 +68,28 @@ jobs:
           python-version: '3.12'
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-duration-seconds: 3600
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_P }}
+
+      - name: Authenticate uv with AWS CodeArtifact
+        run: |
+          TOKEN=$(aws codeartifact get-authorization-token \
+            --domain konverso \
+            --domain-owner 872515286329 \
+            --region "${AWS_REGION}" \
+            --query authorizationToken \
+            --output text)
+          echo "UV_INDEX_KONVERSO_AWS_PYPI_PROXY_USERNAME=aws" >> "$GITHUB_ENV"
+          echo "UV_INDEX_KONVERSO_AWS_PYPI_PROXY_PASSWORD=$TOKEN" >> "$GITHUB_ENV"
+          
       - name: Install Dependencies
         run: uv sync --all-groups --locked --no-editable
 
