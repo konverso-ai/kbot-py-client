@@ -3,12 +3,37 @@
   "extends": [
     "config:recommended"
   ],
+  "commitMessagePrefix": "chore(KB-21705):",
+  "commitMessageAction": "update",
+  "commitMessageTopic": "deps",
+  "hostRules": [
+    {
+      "hostType": "pypi",
+      "matchHost": "konverso-872515286329.d.codeartifact.eu-west-3.amazonaws.com",
+      "username": "{{ secrets.UV_INDEX_KONVERSO_AWS_PYPI_PROXY_USERNAME }}",
+      "password": "{{ secrets.UV_INDEX_KONVERSO_AWS_PYPI_PROXY_PASSWORD }}"
+    }
+  ],
   "packageRules": [
     {
+      "matchDatasources": ["pypi"],
+      "registryUrls": [
+        "https://konverso-872515286329.d.codeartifact.eu-west-3.amazonaws.com/pypi/pypi-proxy/simple/"
+      ]
+    },
+    {
       "matchPackageNames": ["*"],
-      "minimumReleaseAge": "30 days",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "minimumReleaseAge": "15 days",
       "groupName": "all dependencies",
-      "groupSlug": "chore-update-dependencies"
+      "groupSlug": "chore-update-dependencies",
+      "automerge": true
+    },
+    {
+      "matchPackageNames": ["*"],
+      "matchUpdateTypes": ["major"],
+      "minimumReleaseAge": "30 days",
+      "automerge": false
     }
   ],
   "reviewersFromCodeOwners": true

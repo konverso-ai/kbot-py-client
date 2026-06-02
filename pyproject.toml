@@ -34,3 +34,8 @@ lint = [
     "pylint>=4.0.1",
     "ruff==0.14.1",
 ]
+
+[[tool.uv.index]]
+name = "konverso-aws-pypi-proxy"
+url = "https://konverso-872515286329.d.codeartifact.eu-west-3.amazonaws.com/pypi/pypi-proxy/simple/"
+default = true
