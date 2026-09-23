@@ -8,7 +8,7 @@ import requests
 class Client:
     """Base representation of Kbot instance"""
 
-    def __init__(self, server, port=443, proto='https', api_key=None, verify=True):
+    def __init__(self, server, port=443, proto='https', api_key=None, verify=True, recorder=None):
         """
 
 
@@ -18,10 +18,12 @@ class Client:
             - proto: HTTP or HTTPS
             - api_key: A Kbot valid API Key. If provided all requests will be sent with this API Key
                        and it is not required to invoke the login method
+            - recorder: an optional Recorder instance used to trace every API call made by this client
         """
 
         self.host = server
         self.verify = verify
+        self.recorder = recorder
 
         # A version, in the formation "YEAR-V", such as 2024.02
         self.version = None
@@ -200,6 +202,9 @@ class Client:
 
         r = requests.request(method.upper(), self.url + '/api/%s/' % (
             uri), params=params, data=dump_data, headers=headers, files=files, verify=self.verify, timeout=timeout)
+
+        if self.recorder:
+            self.recorder.record(method, r.url, headers=headers, data=data, files=files, response=r)
 
         if r.status_code == 401:
             # Refresh the token
