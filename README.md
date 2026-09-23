@@ -225,6 +225,33 @@ syncer.sync("/tmp/my_source_folder/", "1831f-XXXXXXXXXXXXXXXXXXXXXXX")
 print("Syncing is done :)")
 ````
 
+## Recording API activity
+You may attach a Recorder to a client to trace every API call it makes. This is useful for debugging or for building your own logging.
+
+### Printing each request and response
+```python
+from kbot_client import Client, Printer
+
+cli = Client("mybot.konverso.ai", api_key="xxxxxxxxxxxxxxxxxxx", recorder=Printer())
+cli.metric()
+```
+
+### Printing the equivalent curl command
+This is handy when you want to reproduce a call outside of Python, for example to share it with support or run it from a terminal.
+```python
+from kbot_client import Client, CurlPrinter
+
+cli = Client("mybot.konverso.ai", api_key="xxxxxxxxxxxxxxxxxxx", recorder=CurlPrinter())
+cli.metric()
+```
+
+You can also set or change the recorder after the client is created:
+```python
+cli.recorder = CurlPrinter()
+```
+
+If you need a different behavior, such as writing the activity to a file or a logger, subclass `Recorder` and override its `record` method.
+
 ## A command line chatbot
 We provide a sample command line chatbot, available in Sync or Async mode
 
