@@ -85,7 +85,7 @@ class AsyncCallbackChatClient:
 
         self._conversation_uuid = messages_json.get("id")
 
-        if display_intro:
+        if display_intro and self._callback:
             self._callback(greeting_response.json())
 
     @property
@@ -126,7 +126,8 @@ class AsyncCallbackChatClient:
            Returns a tuple of two elements: sender, messages
         """
         stop = not messages_json.get("dialog_in_progress")
-        self._callback(messages_json)
+        if self._callback:
+            self._callback(messages_json)
         return stop
 
     def send(self, question):

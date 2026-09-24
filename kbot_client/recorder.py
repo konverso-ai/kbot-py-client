@@ -11,7 +11,7 @@ class Recorder:
     received.
     """
 
-    def record(self, method: str, url: str, headers: dict = None, data=None, files: dict = None, response=None):
+    def record(self, method: str, url: str, headers: dict | None = None, data=None, files: dict | None = None, response=None):
         """Called after each API request is made.
 
         Arguments:
@@ -28,7 +28,7 @@ class Recorder:
 class Printer(Recorder):
     """Recorder that prints the URL, protocol, payload and response of each API call"""
 
-    def record(self, method: str, url: str, headers: dict = None, data=None, files: dict = None, response=None):
+    def record(self, method: str, url: str, headers: dict | None = None, data=None, files: dict | None = None, response=None):
         proto = url.split(':', 1)[0]
         print("%s %s (%s)" % (method.upper(), url, proto))
         if headers:
@@ -44,11 +44,11 @@ class Printer(Recorder):
 class CurlPrinter(Recorder):
     """Recorder that prints the equivalent curl command of each API call"""
 
-    def record(self, method: str, url: str, headers: dict = None, data=None, files: dict = None, response=None):
+    def record(self, method: str, url: str, headers: dict | None = None, data=None, files: dict | None = None, response=None):
         print(self.to_curl(method, url, headers=headers, data=data, files=files))
 
     @staticmethod
-    def to_curl(method: str, url: str, headers: dict = None, data=None, files: dict = None) -> str:
+    def to_curl(method: str, url: str, headers: dict | None = None, data=None, files: dict | None = None) -> str:
         """Builds the curl command line equivalent to the given request"""
         parts = ["curl", "-X", method.upper()]
 
