@@ -55,11 +55,19 @@ jobs:
       - name: Install Dependencies
         run: uv sync --all-groups --locked --no-editable
 
-      # - name: Lint code with Ruff
-      #   run: poetry run ruff check
+      # Bug-finding gate. ruff.toml selects ALL rules: the codebase does not
+      # meet it yet, so only these rules (and pylint errors) block the build.
+      - name: Lint with Ruff
+        run: uv run --no-sync ruff check --select F,E9,B,PLE kbot_client examples
 
-      # - name: Run Pylint
-      #   run: poetry run pylint .
+      - name: Lint with Pylint (errors only)
+        run: uv run --no-sync pylint --errors-only kbot_client examples tests
+
+      - name: Type check with ty
+        run: uv run --no-sync ty check kbot_client examples tests
+
+      - name: Run tests
+        run: uv run --no-sync pytest
 
   build-push:
     if: ${{ github.ref == 'refs/heads/main' }}
