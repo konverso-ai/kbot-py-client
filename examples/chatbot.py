@@ -1,8 +1,8 @@
 from kbot_client import Client, chatbot_client
 
-user_email = 'amedee.potier@konverso.ai'
-user_firstname = "Amédée"
-user_lastname = "Potier"
+user_email = 'my.email@mycompany.com'
+user_firstname = "MyFirstName"
+user_lastname = "MyLastName"
 external_auth = "my-app"
 
 # Create a session using an API key with strong privileges
