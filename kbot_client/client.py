@@ -1,6 +1,8 @@
 """Dialog tester"""
 import json
 import time
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import requests
 
@@ -179,6 +181,12 @@ class Client:
         endpoint.__name__ = name
         setattr(self, name, endpoint)
 
+    if TYPE_CHECKING:
+        # Endpoint methods (metric, get_dashboard, ...) are added at runtime from
+        # the server schema: tell static checkers that they exist. This is
+        # not defined at runtime, so unknown attributes still raise AttributeError.
+        def __getattr__(self, name: str) -> Callable[..., requests.Response]: ...
+
     def __refresh(self):
         r = requests.post(self.url + "/api/refresh",
                           data=json.dumps({"refresh_token": self.__refresh_token}),
@@ -186,7 +194,7 @@ class Client:
         r.raise_for_status()
         self.__reset_headers(r.json())
 
-    def __request(self, method: str, uri : str = None, data: dict = None, params: dict = None, files: dict = None, attempt=0,  timeout=None):
+    def __request(self, method: str, uri: str | None = None, data: dict | None = None, params: dict | None = None, files: dict | None = None, attempt=0,  timeout=None):
         if files:
             # For file upload, the data must be a dictionnary
             dump_data = data
@@ -200,11 +208,17 @@ class Client:
         else:
             headers = self._headers
 
+        # requests reads upload files to their end: remember where they start so
+        # that a replay after a token refresh sends the same content.
+        file_positions = [(fileobj, fileobj.tell()) for fileobj in _file_objects(files)]
+
         r = requests.request(method.upper(), self.url + '/api/%s/' % (
             uri), params=params, data=dump_data, headers=headers, files=files, verify=self.verify, timeout=timeout)
 
         if self.recorder:
-            self.recorder.record(method, r.url, headers=headers, data=data, files=files, response=r)
+            # Give the recorder a snapshot: the client headers change on token
+            # refresh, and a recorder must not be able to alter them.
+            self.recorder.record(method, r.url, headers=dict(headers), data=data, files=files, response=r)
 
         if r.status_code == 401:
             # Refresh the token
@@ -219,20 +233,22 @@ class Client:
                 time.sleep(3)
 
             # Re-invoke the request
-            r = self.__request(method, uri=uri, data=data, params=params, attempt=attempt+1)
+            for fileobj, position in file_positions:
+                fileobj.seek(position)
+            r = self.__request(method, uri=uri, data=data, params=params, files=files, attempt=attempt+1, timeout=timeout)
 
         return r
 
-    def request(self, method: str, uri: str, data: dict = None, params: dict = None, files: dict = None, timeout=None):
+    def request(self, method: str, uri: str, data: dict | None = None, params: dict | None = None, files: dict | None = None, timeout=None):
         return self.__request(method, uri=uri, data=data, params=params, files=files, timeout=timeout)
 
-    def unit(self, name: str, params=None, timeout=None) -> dict:
+    def unit(self, name: str, params=None, timeout=None) -> dict | None:
         r = self.get(name, params, timeout=timeout)
         if r:
             return r.json()
         return None
 
-    def message(self, cid: int, message: str, timeout: int=60) -> list:
+    def message(self, cid: int, message: str, timeout: float = 60) -> list:
         response = []
 
         data = {'type': 'message', 'message': message}
@@ -269,7 +285,7 @@ class Client:
             #     self._process('logout', 1)
 
             # Logout from the APIs
-            self.request("post", self.url + '/api/logout', timeout=timeout)
+            requests.post(self.url + '/api/logout', headers=self._headers, verify=self.verify, timeout=timeout)
 
     #
     # In addition to the Generated and built in API methods, we have the classic base REST methods
@@ -302,6 +318,16 @@ class Client:
                }
         """
         return self.__request("post", unit, params=params, data=data, files=files, timeout=timeout)
+
+
+def _file_objects(files: dict | None = None):
+    """Yields the seekable file objects of a requests `files` mapping, whose values
+    are either a file object or a (filename, file object, ...) tuple"""
+    for value in (files or {}).values():
+        fileobj = value[1] if isinstance(value, (tuple, list)) else value
+        if hasattr(fileobj, "seek") and hasattr(fileobj, "tell"):
+            yield fileobj
+
 
 class UpKbotClient(Client):
     """Represents a currently reachable Kbot instance"""

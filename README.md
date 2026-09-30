@@ -298,3 +298,32 @@ from kbot_client import chatbot_client
 ...
 chatbot_client.run(mode="synchronous", client=cli, assistant=assistant, convert_html_to_text=True)
 ```
+
+# Development #
+
+## Running the tests
+The test suite lives in `tests/` and runs against a local fake Kbot HTTP server, so no Kbot instance is needed:
+```bash
+uv run --group test pytest
+```
+
+### Live tests
+`tests/live/` runs against a real Kbot instance. These tests are skipped unless the following environment variables are set (never commit the API key):
+
+* `KBOT_LIVE_HOST`: the Kbot host, such as `mybot.konverso.ai`
+* `KBOT_LIVE_API_KEY`: an API key allowed to create and impersonate users. The tests create (once) and impersonate the end user `kbot-py-client-tests@konverso.ai`
+* `KBOT_LIVE_FOLDER_UUID` (optional): a File Manager folder. File tests create a timestamped sub folder in it and delete it afterwards
+
+```bash
+KBOT_LIVE_HOST=mybot.konverso.ai KBOT_LIVE_API_KEY=xxxx KBOT_LIVE_FOLDER_UUID=yyyy uv run --group test pytest -m live
+```
+Use `-m "not live"` to run only the offline tests.
+
+## Linting and type checking
+The CI runs the following checks, which must pass:
+```bash
+uv run ruff check --select F,E9,B,PLE kbot_client examples
+uv run pylint --errors-only kbot_client examples tests
+uv run ty check kbot_client examples tests
+```
+`ruff.toml` selects all Ruff rules: this is the target, not yet met by the codebase (`uv run ruff check` still reports style findings).

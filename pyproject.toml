@@ -1,6 +1,6 @@
 [project]
 name = "kbot-py-client"
-version = "2.1.3"
+version = "2.1.4"
 requires-python = ">=3.10"
 description = "Client for Konverso Kbot."
 readme = "README.md"
@@ -29,13 +29,36 @@ build-backend = "uv_build"
 module-name = "kbot_client"
 module-root = ""
 
-[dependency-groups]
-lint = [
-    "pylint>=4.0.1",
-    "ruff==0.14.1",
+[tool.deptry]
+# The default "tests" exclude only matches a top-level tests/ folder (re.match
+# anchors at the start), so nested test dirs like core/.../tests/ are missed,
+# making deptry flag pytest (a dev dependency) as used in "non-dev" code.
+extend_exclude = [
+    "(^|.*/)tests/",
+]
+known_first_party = [
+    "kbot_client",
 ]
 
-[[tool.uv.index]]
-name = "konverso-aws-pypi-proxy"
-url = "https://konverso-872515286329.d.codeartifact.eu-west-3.amazonaws.com/pypi/pypi-proxy/simple/"
-default = true
+[dependency-groups]
+deps = [
+    "deptry",
+]
+lint = [
+    "pylint",
+    "ruff",
+]
+test = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+]
+typecheck = [
+    "ty",
+]
+dev = [
+    { include-group = "deps" },
+    { include-group = "lint" },
+    { include-group = "typecheck" },
+    { include-group = "test" },
+]
