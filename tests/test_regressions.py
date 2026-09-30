@@ -147,6 +147,38 @@ class TestRecorderHeaders:
         assert request.headers["X-API-KEY"] == API_KEY
 
 
+class TestPerRequestHeadersOnReplay:
+    """Bug: per-request headers were dropped by get() and by the replay after a 401 + token refresh."""
+
+    @pytest.fixture
+    def expiring(self, kbot: FakeKbot) -> FakeKbot:
+        kbot.route("POST", "/api/refresh", {"access_token": "access-2"})
+        kbot.route("GET", "/api/metric/", (401, {}), {"count": 1})
+        kbot.route("POST", "/api/user/impersonate/", (401, {}), {"access_token": "bob-token", "user_id": "bob"})
+        return kbot
+
+    def test_expected_replay_sends_extra_headers_with_refreshed_token(self, expiring: FakeKbot, logged_in_client: Client):
+        response = logged_in_client.get("metric", headers={"X-Trace": "t-1"})
+
+        assert response.json() == {"count": 1}
+        first, replay = expiring.requests_to("GET", "/api/metric/")
+        assert first.headers["X-Trace"] == replay.headers["X-Trace"] == "t-1"
+        assert first.headers["Authorization"] == "access-1"
+        assert replay.headers["Authorization"] == "access-2"
+
+    def test_expected_impersonation_replay_keeps_provider_headers(self, expiring: FakeKbot, logged_in_client: Client):
+        logged_in_client.impersonate(headers={"AUTHENTICATION-PROVIDER-KEY": "oauth-token"})
+
+        first, replay = expiring.requests_to("POST", "/api/user/impersonate/")
+        assert first.headers["AUTHENTICATION-PROVIDER-KEY"] == replay.headers["AUTHENTICATION-PROVIDER-KEY"] == "oauth-token"
+        assert replay.headers["Authorization"] == "access-2"
+
+    def test_symptom_no_request_goes_out_without_the_extra_header(self, expiring: FakeKbot, logged_in_client: Client):
+        logged_in_client.get("metric", headers={"X-Trace": "t-1"})
+
+        assert [r for r in expiring.requests_to("GET", "/api/metric/") if "X-Trace" not in r.headers] == []
+
+
 class TestCallbackChatWithoutCallback:
     """Bug: `callback` defaults to None but was called unconditionally (TypeError)."""
 

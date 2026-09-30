@@ -216,29 +216,28 @@ class Client:
             dump_data = json.dumps(data or {})
 
         if files:
-            _headers = self._headers.copy()
-            del _headers['Content-Type']
-            _headers['Accept'] = "*/*"
+            request_headers = self._headers.copy()
+            del request_headers['Content-Type']
+            request_headers['Accept'] = "*/*"
         else:
-            _headers = self._headers
+            request_headers = self._headers
 
         if headers:
-            _headers = _headers.copy()
-            _headers.update(headers)
-
-        headers = _headers
+            # Keep the caller overrides in `headers`: a replay after a token refresh
+            # merges them again on top of the refreshed client headers.
+            request_headers = {**request_headers, **headers}
 
         # requests reads upload files to their end: remember where they start so
         # that a replay after a token refresh sends the same content.
         file_positions = [(fileobj, fileobj.tell()) for fileobj in _file_objects(files)]
 
         r = requests.request(method.upper(), self.url + '/api/%s/' % (
-            uri), params=params, data=dump_data, headers=headers, files=files, verify=self.verify, timeout=timeout)
+            uri), params=params, data=dump_data, headers=request_headers, files=files, verify=self.verify, timeout=timeout)
 
         if self.recorder:
             # Give the recorder a snapshot: the client headers change on token
             # refresh, and a recorder must not be able to alter them.
-            self.recorder.record(method, r.url, headers=dict(headers), data=data, files=files, response=r)
+            self.recorder.record(method, r.url, headers=dict(request_headers), data=data, files=files, response=r)
 
         if r.status_code == 401:
             # Refresh the token
@@ -255,7 +254,7 @@ class Client:
             # Re-invoke the request
             for fileobj, position in file_positions:
                 fileobj.seek(position)
-            r = self.__request(method, uri=uri, data=data, params=params, files=files, attempt=attempt+1, timeout=timeout)
+            r = self.__request(method, uri=uri, data=data, params=params, files=files, attempt=attempt+1, timeout=timeout, headers=headers)
 
         return r
 
@@ -311,7 +310,7 @@ class Client:
     # In addition to the Generated and built in API methods, we have the classic base REST methods
     #
     def get(self, unit, params=None, timeout=None, headers=None):
-        return self.__request("get", unit, params=params, timeout=timeout)
+        return self.__request("get", unit, params=params, timeout=timeout, headers=headers)
 
     def put(self, unit, data=None, timeout=None, headers=None):
         return self.__request("put", unit, data=data, timeout=timeout, headers=headers)
