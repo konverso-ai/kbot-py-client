@@ -35,7 +35,7 @@ class Client:
         else:
             proto = 'http'
 
-        if port in (80, 443):
+        if port in {80, 443}:
             self.url = "%s://%s" % (proto, server)
         else:
             self.url = "%s://%s:%s" % (proto, server, port)
@@ -96,8 +96,21 @@ class Client:
         self.__reset_headers(r.json())
         self.schema()
 
-    def impersonate(self, username, usertype='local', external_auth='', userdata=None, timeout=5):
-        """Impersonate the given user"""
+    def impersonate(self, username=None, usertype='local', external_auth='', userdata=None, timeout=5, headers=None):
+        """Impersonate the given user
+
+           headers is usually not required. But it may be used to provide extra secondary authentication
+           of the user with an header such as: 
+           headers = {
+               "AUTHENTICATION-PROVIDER": "azure_konverso",
+               "AUTHENTICATION-PROVIDER-KEY":  "eyJ0eXAi...",
+           }
+           where
+             - AUTHENTICATION-PROVIDER would be the name of a rest oauth2 authentication provider
+             - AUTHENTICATION-PROVIDER-KEY will be an access token (obtained through oauth2) and will
+               be validated by the related provider
+           In such situation, the username may be ignored since it will be retrieved from the authentication token
+        """
 
         r = self.request("post", "user/impersonate",
             data={
@@ -105,7 +118,8 @@ class Client:
                 "im_type": usertype,
                 "external_auth": external_auth,
                 "userdata": userdata or {}},
-            timeout=timeout)
+            timeout=timeout,
+            headers=headers)
 
         r.raise_for_status()
 
@@ -194,7 +208,7 @@ class Client:
         r.raise_for_status()
         self.__reset_headers(r.json())
 
-    def __request(self, method: str, uri: str | None = None, data: dict | None = None, params: dict | None = None, files: dict | None = None, attempt=0,  timeout=None):
+    def __request(self, method: str, uri: str | None = None, data: dict | None = None, params: dict | None = None, files: dict | None = None, attempt=0,  timeout=None, headers: dict | None = None):
         if files:
             # For file upload, the data must be a dictionnary
             dump_data = data
@@ -202,11 +216,17 @@ class Client:
             dump_data = json.dumps(data or {})
 
         if files:
-            headers = self._headers.copy()
-            del headers['Content-Type']
-            headers['Accept'] = "*/*"
+            _headers = self._headers.copy()
+            del _headers['Content-Type']
+            _headers['Accept'] = "*/*"
         else:
-            headers = self._headers
+            _headers = self._headers
+
+        if headers:
+            _headers = _headers.copy()
+            _headers.update(headers)
+
+        headers = _headers
 
         # requests reads upload files to their end: remember where they start so
         # that a replay after a token refresh sends the same content.
@@ -239,8 +259,8 @@ class Client:
 
         return r
 
-    def request(self, method: str, uri: str, data: dict | None = None, params: dict | None = None, files: dict | None = None, timeout=None):
-        return self.__request(method, uri=uri, data=data, params=params, files=files, timeout=timeout)
+    def request(self, method: str, uri: str, data: dict | None = None, params: dict | None = None, files: dict | None = None, timeout=None, headers: dict | None = None):
+        return self.__request(method, uri=uri, data=data, params=params, files=files, timeout=timeout, headers=headers)
 
     def unit(self, name: str, params=None, timeout=None) -> dict | None:
         r = self.get(name, params, timeout=timeout)
@@ -267,7 +287,7 @@ class Client:
                 if resp['type'] == 'message':
                     # It's possible that bot will send several message to one input
                     response.append(resp)
-                elif resp['type'] in ('stop_topic', 'wait_user_input'):
+                elif resp['type'] in {'stop_topic', 'wait_user_input'}:
                     # Bot stop to process
                     # - stop_topic : bot stop to process message and ready for new topic
                     # - wait_user_input : bot asked the question and wait for user answer
@@ -290,19 +310,19 @@ class Client:
     #
     # In addition to the Generated and built in API methods, we have the classic base REST methods
     #
-    def get(self, unit, params=None, timeout=None):
+    def get(self, unit, params=None, timeout=None, headers=None):
         return self.__request("get", unit, params=params, timeout=timeout)
 
-    def put(self, unit, data=None, timeout=None):
-        return self.__request("put", unit, data=data, timeout=timeout)
+    def put(self, unit, data=None, timeout=None, headers=None):
+        return self.__request("put", unit, data=data, timeout=timeout, headers=headers)
 
-    def post(self, unit, data=None, params=None, timeout=None):
-        return self.__request("post", unit, data=data, params=params, timeout=timeout)
+    def post(self, unit, data=None, params=None, timeout=None, headers=None):
+        return self.__request("post", unit, data=data, params=params, timeout=timeout, headers=headers)
 
-    def delete(self, unit, params=None, timeout=None):
-        return self.__request("delete", unit, params=params, timeout=timeout)
+    def delete(self, unit, params=None, timeout=None, headers=None):
+        return self.__request("delete", unit, params=params, timeout=timeout, headers=headers)
 
-    def post_file(self, unit, data, params=None, files=None, timeout=None):
+    def post_file(self, unit, data, params=None, files=None, timeout=None, headers=None):
         """Attach the given files.
            Sample parameter values:
                unit = "attachment"
@@ -317,7 +337,7 @@ class Client:
                    "name": f,
                }
         """
-        return self.__request("post", unit, params=params, data=data, files=files, timeout=timeout)
+        return self.__request("post", unit, params=params, data=data, files=files, timeout=timeout, headers=headers)
 
 
 def _file_objects(files: dict | None = None):
