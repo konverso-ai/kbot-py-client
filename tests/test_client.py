@@ -134,6 +134,23 @@ class TestImpersonate:
         with pytest.raises(requests.HTTPError):
             client.impersonate("bob")
 
+    def test_extra_headers_are_sent_on_the_impersonate_request_only(self, kbot: FakeKbot, client: Client):
+        kbot.route("POST", "/api/user/impersonate/", {"access_token": "bob-token", "user_id": "bob"})
+        provider = {"AUTHENTICATION-PROVIDER": "azure_konverso", "AUTHENTICATION-PROVIDER-KEY": "oauth-token"}
+
+        client.impersonate(headers=provider)
+
+        (impersonate_request,) = kbot.requests_to("POST", "/api/user/impersonate/")
+        assert impersonate_request.headers["AUTHENTICATION-PROVIDER"] == "azure_konverso"
+        assert impersonate_request.headers["AUTHENTICATION-PROVIDER-KEY"] == "oauth-token"
+        assert impersonate_request.headers["X-API-KEY"] == API_KEY
+        # The username comes from the provider token: none is sent.
+        assert impersonate_request.json()["username"] is None
+        # The secondary authentication must not stick to the impersonated session.
+        last_schema_request = kbot.requests_to("GET", "/api/schema/")[-1]
+        assert last_schema_request.headers["Authorization"] == "bob-token"
+        assert "AUTHENTICATION-PROVIDER-KEY" not in last_schema_request.headers
+
 
 class TestRestMethods:
     @pytest.mark.parametrize("verb", ["post", "put"])
@@ -191,6 +208,56 @@ class TestRestMethods:
         # The multipart header override must not leak into later requests.
         (follow_up,) = kbot.requests_to("GET", "/api/user/")
         assert follow_up.headers["Content-Type"] == "application/json; charset=utf-8"
+
+
+CALL_WITH_HEADERS = {
+    "get": lambda cli, headers: cli.get("user", headers=headers),
+    "delete": lambda cli, headers: cli.delete("user", headers=headers),
+    "put": lambda cli, headers: cli.put("user", data={}, headers=headers),
+    "post": lambda cli, headers: cli.post("user", data={}, headers=headers),
+    "request": lambda cli, headers: cli.request("post", "user", headers=headers),
+}
+
+
+class TestPerRequestHeaders:
+    @pytest.mark.parametrize("call", CALL_WITH_HEADERS.values(), ids=CALL_WITH_HEADERS.keys())
+    def test_extra_headers_are_added_to_client_headers(self, kbot: FakeKbot, client: Client, call):
+        kbot.route("GET", "/api/user/", {})
+        kbot.route("DELETE", "/api/user/", {})
+        kbot.route("PUT", "/api/user/", {})
+        kbot.route("POST", "/api/user/", {})
+
+        call(client, {"X-Trace": "t-1"})
+
+        (request,) = [r for r in kbot.requests if r.path == "/api/user/"]
+        assert request.headers["X-Trace"] == "t-1"
+        assert request.headers["X-API-KEY"] == API_KEY
+        assert request.headers["Content-Type"] == "application/json; charset=utf-8"
+
+    def test_extra_headers_override_client_headers_for_one_request(self, kbot: FakeKbot, client: Client):
+        kbot.route("GET", "/api/user/", {}, {})
+
+        client.get("user", headers={"X-API-KEY": "other-key", "X-Trace": "t-1"})
+        client.get("user")
+
+        overridden, follow_up = kbot.requests_to("GET", "/api/user/")
+        assert overridden.headers["X-API-KEY"] == "other-key"
+        assert follow_up.headers["X-API-KEY"] == API_KEY
+        assert "X-Trace" not in follow_up.headers
+
+    def test_post_file_keeps_multipart_headers_with_extra_headers(self, kbot: FakeKbot, client: Client, tmp_path):
+        kbot.route("POST", "/api/attachment/", {"id": "file-1"})
+        document = tmp_path / "doc.pdf"
+        document.write_bytes(b"%PDF-content")
+
+        with document.open("rb") as fd:
+            client.post_file("attachment", data={"name": "doc.pdf"}, files={"upload_files": fd}, headers={"X-Trace": "t-1"})
+
+        (upload,) = kbot.requests_to("POST", "/api/attachment/")
+        assert upload.headers["X-Trace"] == "t-1"
+        assert upload.headers["Accept"] == "*/*"
+        assert upload.headers["Content-Type"].startswith("multipart/form-data")
+        assert upload.form()["upload_files"] == ("doc.pdf", b"%PDF-content")
 
 
 class TestUnit:
