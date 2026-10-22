@@ -10,7 +10,8 @@ import requests
 class Client:
     """Base representation of Kbot instance"""
 
-    def __init__(self, server, port=443, proto='https', api_key=None, verify=True, recorder=None):
+    def __init__(self, server, port=443, proto='https', api_key=None, verify=True, recorder=None,
+                 oauth_provider=None, oauth_key=None):
         """
 
 
@@ -20,6 +21,10 @@ class Client:
             - proto: HTTP or HTTPS
             - api_key: A Kbot valid API Key. If provided all requests will be sent with this API Key
                        and it is not required to invoke the login method
+            - oauth_provider and oauth_key. If provided, then the authentication will be done using the
+                       IDP access_token (oauth_key) using the IDP kbot implementation (oauth_provider).
+                       This mechanism allows for true SSO where the authentication token is simply conveyed
+                       to the kbot instance.
             - recorder: an optional Recorder instance used to trace every API call made by this client
         """
 
@@ -51,6 +56,14 @@ class Client:
             self._headers = {
                 'Content-Type': 'application/json; charset=utf-8',
                 'X-API-KEY': api_key
+            }
+            self.schema()
+
+        elif oauth_provider and oauth_key:
+            self._headers = {
+                'Content-Type': 'application/json; charset=utf-8',
+                'AUTHORIZATION': 'Bearer ' + oauth_key,
+                'AUTHENTICATION-PROVIDER': oauth_provider,
             }
             self.schema()
 
