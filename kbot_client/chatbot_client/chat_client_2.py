@@ -4,6 +4,8 @@ A command line chatbot interface
 Compatible with kbot version >= 2024.02
 
 """
+import json
+import sys
 import uuid
 import time
 from abc import ABC, abstractmethod
@@ -242,3 +244,200 @@ class SyncChatClient(ChatClient):
         response = self._client.get(f"conversation/{self._type}/{self._conversation_id}/messages", params=params)
         response.raise_for_status()
         self._process_new_messages(response.json(), context="response")
+
+
+class WebSocketChatClient(ChatClient):
+    """A Chatbot client that sends the user questions and receives the bot responses
+       over the conversation web socket, displaying them as they come.
+
+       The server closes the socket when a dialog turn ends, so the socket is
+       (re)opened whenever a question needs to be sent.
+
+       Streamed text parts arrive as "append" chunks sharing the same part id, often
+       followed by a "replace" holding the full text. Chunks are buffered per part and
+       displayed once the part is complete, unless show_streaming_parts is set.
+
+       Requires the "websockets" package: pip install kbot-py-client[websocket]
+    """
+    def __init__(self, client, receive_timeout=120, **kwargs):
+        try:
+            # pylint: disable=import-outside-toplevel
+            from websockets.sync.client import connect
+            from websockets.exceptions import ConnectionClosed, InvalidStatus
+        except ImportError as e:
+            raise RuntimeError("The websocket mode requires the 'websockets' package. Use: "
+                               "pip3 install 'kbot-py-client[websocket]'") from e
+
+        self._connect = connect
+        self._connection_closed = ConnectionClosed
+        self._invalid_status = InvalidStatus
+        self._receive_timeout = receive_timeout
+        self._ws = None
+        self._pending = {}    # part id -> (response id, sender, format, text so far)
+        self._shown = {}      # part id -> text displayed
+        self._streaming = None  # part id currently being streamed on screen
+        self._streamed = ""     # text already streamed on screen for that part
+        try:
+            super().__init__(client, **kwargs)
+        finally:
+            self._close()
+
+    @property
+    def _socket_url(self):
+        url = self._client.url
+        if url.startswith("https://"):
+            url = "wss://" + url[len("https://"):]
+        elif url.startswith("http://"):
+            url = "ws://" + url[len("http://"):]
+        return f"{url}/api/conversation/{self._type}/{self._conversation_id}/ws/"
+
+    def _open(self):
+        """Opens the conversation socket. Returns True on success"""
+        headers = {k: v for k, v in self._client.headers.items() if k.lower() != "content-type"}
+        kwargs = {"additional_headers": headers}
+        if self._socket_url.startswith("wss://") and not self._client.verify:
+            # pylint: disable=import-outside-toplevel
+            import ssl
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            kwargs["ssl"] = context
+        try:
+            self._ws = self._connect(self._socket_url, **kwargs)
+        except self._invalid_status as e:
+            print(f"ERROR: web socket refused: {e.response.status_code}")
+            return False
+        return True
+
+    def _close(self):
+        if self._ws is not None:
+            try:
+                self._ws.close()
+            finally:
+                self._ws = None
+
+    def _send_question(self, question):
+        frame = json.dumps({
+            "type": "message",
+            "message": question,
+            "message_id": str(uuid.uuid4()),
+        })
+        # The server may close the socket between two turns: reopen once
+        for _ in range(2):
+            if self._ws is None and not self._open():
+                return
+            try:
+                self._ws.send(frame)
+                return
+            except self._connection_closed:
+                self._ws = None
+        print("ERROR: could not send the question, the web socket keeps closing")
+
+    def _get_response(self):
+        """Reads frames until the bot hands the turn back to the user"""
+        if self._ws is None:
+            return
+        try:
+            while True:
+                try:
+                    raw = self._ws.recv(timeout=self._receive_timeout)
+                except TimeoutError:
+                    print(f"WARNING: no bot response received in {self._receive_timeout} seconds")
+                    break
+                try:
+                    frame = json.loads(raw)
+                except ValueError:
+                    print("Unsupported (non JSON) frame:", raw)
+                    continue
+                if self._process_frame(frame):
+                    break
+        except self._connection_closed:
+            # The server ends the socket once the dialog turn is over
+            self._ws = None
+        finally:
+            self._flush()
+
+    def _process_frame(self, frame):
+        """Processes one socket frame. Returns True when the bot turn is over"""
+        if frame.get("type") == "keepalive":
+            return False
+
+        stop = False
+        for message in frame.get("messages", []):
+            message_type = message.get("type")
+            response_id = message.get("response_id")
+
+            # A message from another response means the earlier ones are complete
+            self._flush(keep=response_id)
+
+            if message_type == "typing":
+                continue
+
+            if message_type == "wait_user_input":
+                stop = True
+                continue
+
+            if message_type not in ("message", "notification"):
+                continue
+
+            sender = message.get("sender", {}).get("name", "")
+            for part in message.get("parts", []):
+                self._process_part(response_id, sender, part)
+
+        if frame.get("dialog_in_progress") is False:
+            stop = True
+        return stop
+
+    def _process_part(self, response_id, sender, part):
+        part_format, part_id = part.get("format"), part.get("id")
+        if part_format not in self._render_types:
+            return
+        value = part.get("value") or ""
+
+        # html parts come whole, and replace parts hold the full text
+        if part.get("mode") == "replace" or part_format == "html":
+            self._pending.pop(part_id, None)
+            self._show(part_id, sender, part_format, value)
+            return
+
+        _, _, _, so_far = self._pending.get(part_id, (response_id, sender, part_format, ""))
+        self._pending[part_id] = (response_id, sender, part_format, so_far + value)
+
+        if self._show_streaming_parts:
+            if self._streaming != part_id:
+                self._end_streaming()
+                self._streaming = part_id
+                self._streamed = ""
+                sys.stdout.write(self._prompt.format(sender=sender, message=""))
+            sys.stdout.write(value)
+            sys.stdout.flush()
+            self._streamed += value
+
+    def _end_streaming(self):
+        if self._streaming is not None:
+            sys.stdout.write("\n")
+            sys.stdout.flush()
+            self._shown[self._streaming] = self._streamed.strip()
+            self._streaming = None
+            self._streamed = ""
+
+    def _flush(self, keep=None):
+        """Displays every buffered part, except those of the response 'keep' which may still be streaming"""
+        for part_id, (response_id, sender, part_format, text) in list(self._pending.items()):
+            if response_id != keep:
+                if part_id == self._streaming:
+                    self._end_streaming()
+                del self._pending[part_id]
+                self._show(part_id, sender, part_format, text)
+
+    def _show(self, part_id, sender, part_format, text):
+        text = text.strip()
+        if not text or self._shown.get(part_id) == text:
+            return
+        if part_id == self._streaming:
+            self._end_streaming()
+            if self._shown.get(part_id) == text:
+                return
+        self._shown[part_id] = text
+        self._sender = sender
+        self._display_response({"format": part_format, "value": text, "mode": "replace"})

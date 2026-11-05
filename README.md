@@ -253,7 +253,7 @@ cli.recorder = CurlPrinter()
 If you need a different behavior, such as writing the activity to a file or a logger, subclass `Recorder` and override its `record` method.
 
 ## A command line chatbot
-We provide a sample command line chatbot, available in Sync or Async mode
+We provide a sample command line chatbot, available in Sync, Async or WebSocket mode
 
 In this example, we simply initialize a chatbot client after creating a relevant User and Impersonating to it.
 This is a good example of implementation of a custom Client for the Kbot product.
@@ -297,4 +297,19 @@ all the messages are received for the user question.
 from kbot_client import chatbot_client
 ...
 chatbot_client.run(mode="synchronous", client=cli, assistant=assistant, convert_html_to_text=True)
+```
+
+Finally, the websocket client sends the questions and receives the bot responses over the conversation
+web socket (`/api/conversation/<type>/<id>/ws/`), displaying them as they are pushed by the server.
+Streamed text is buffered and displayed once complete, unless `show_streaming_parts=True` is given, in which
+case it is displayed as it arrives. This mode requires Kbot 2024.02 or later, and the `websockets` package:
+
+```bash
+pip install 'kbot-py-client[websocket]'
+```
+
+```python
+from kbot_client import chatbot_client
+...
+chatbot_client.run(mode="websocket", client=cli, assistant=assistant, convert_html_to_text=True)
 ```

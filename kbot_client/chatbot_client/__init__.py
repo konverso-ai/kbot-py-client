@@ -24,7 +24,7 @@ def run(mode="synchronous", **kwargs):
     """Starts an interactive ChatClient for the given client, in the selected mode
 
     Arguments:
-        - mode: One of "synchronous" or "asynchronous"
+        - mode: One of "synchronous", "asynchronous" or "websocket"
     """
 
     client = kwargs.get("client")
@@ -32,6 +32,11 @@ def run(mode="synchronous", **kwargs):
         raise RuntimeError("Missing mandatory 'client' parameter")
 
     version = client.version
+
+    if mode == "websocket":
+        if _get_module(version) is chat_client:
+            raise RuntimeError(f"The websocket mode is not supported by Kbot version {version}")
+        return _get_chatbot_instance(version, "WebSocketChatClient", **kwargs)
 
     if mode == "asynchronous":
         return _get_chatbot_instance(version, "AsyncChatClient", **kwargs)

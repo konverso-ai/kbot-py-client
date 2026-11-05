@@ -59,6 +59,11 @@ class Client:
         self._cid = None
 
     @property
+    def headers(self):
+        """Returns a copy of the headers sent with each API request (authentication included)"""
+        return dict(self._headers)
+
+    @property
     def admin_url(self):
         """Returns the URL of the Kbot Administration view"""
         return "%s/admin" % self.url

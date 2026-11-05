@@ -1,6 +1,6 @@
 [project]
 name = "kbot-py-client"
-version = "2.1.4"
+version = "2.2.0"
 requires-python = ">=3.10"
 description = "Client for Konverso Kbot."
 readme = "README.md"
@@ -15,6 +15,11 @@ classifiers=[
 ]
 dependencies = [
     "requests>=2.32.5",
+]
+
+[project.optional-dependencies]
+websocket = [
+    "websockets>=13",
 ]
 
 [project.urls]
