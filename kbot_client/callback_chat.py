@@ -135,8 +135,7 @@ class AsyncCallbackChatClient:
 
            Args:
                question (str): some user message
-               variables: an optional dictionnary that will be provided as extra keywords
-                          for the processing of the related question
+               variables (dict | None): optional extra keywords for the processing of the related question
         """
         data = {
             'message_id': str(uuid.uuid4()),
@@ -144,8 +143,9 @@ class AsyncCallbackChatClient:
             'message': question,
             'status': 'sending',
             'fromUser': True,
-            'variables': variables,
         }
+        if variables is not None:
+            data['variables'] = variables
 
         response = self._client.post(f"conversation/{self._type}/{self._conversation_uuid}/message", data=data)
         response.raise_for_status()
