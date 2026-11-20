@@ -130,11 +130,13 @@ class AsyncCallbackChatClient:
             self._callback(messages_json)
         return stop
 
-    def send(self, question):
+    def send(self, question, variables=None):
         """Send the user question to Kbot.
 
            Args:
                question (str): some user message
+               variables: an optional dictionnary that will be provided as extra keywords
+                          for the processing of the related question
         """
         data = {
             'message_id': str(uuid.uuid4()),
@@ -142,6 +144,7 @@ class AsyncCallbackChatClient:
             'message': question,
             'status': 'sending',
             'fromUser': True,
+            'variables': variables,
         }
 
         response = self._client.post(f"conversation/{self._type}/{self._conversation_uuid}/message", data=data)
