@@ -132,7 +132,7 @@ class ChatClient(ABC):
             if self._convert_html_to_text:
                 try:
                     # Optional dependency, not installed by default
-                    from bs4 import BeautifulSoup  # pylint: disable=import-error  # ty: ignore[unresolved-import]
+                    from bs4 import BeautifulSoup  # pylint: disable=import-error  # ty: ignore[import-not-found]
                     message_value = BeautifulSoup(message.get('value'), 'html.parser').get_text()
                 except:
                     print("ERROR: HTML to Text conversion requested, but beautifull soup is not installed. Use: ")
