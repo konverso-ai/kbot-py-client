@@ -302,7 +302,7 @@ chatbot_client.run(mode="synchronous", client=cli, assistant=assistant, convert_
 Finally, the websocket client sends the questions and receives the bot responses over the conversation
 web socket (`/api/conversation/<type>/<id>/ws/`), displaying them as they are pushed by the server.
 Streamed text is buffered and displayed once complete, unless `show_streaming_parts=True` is given, in which
-case it is displayed as it arrives. This mode requires Kbot 2024.02 or later, and the `websockets` package:
+case it is displayed as it arrives. This mode requires Kbot 2026.02 or later, and the `websockets` package:
 
 ```bash
 pip install 'kbot-py-client[websocket]'
